@@ -465,7 +465,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.18</span>
+      <span class="header-version">v0.1.19</span>
     </div>
   </header>
 
@@ -808,10 +808,39 @@ function loadCache() {
       c.traction_score = c.traction_score ?? 0;
       c.reply_count    = c.reply_count    ?? 0;
       c.prev_likes     = c.prev_likes     ?? null;
+      c.prev_refresh_date = c.prev_refresh_date ?? null;
       c.video_title    = c.video_title    ?? '';
     }
     return comments;
   } catch(e) { return null; }
+}
+
+// Snapshot = {date, likes:{comment_id: likes}} — persisted separately so it
+// survives cache rebuilds and carries forward across sessions.
+function saveSnapshot(comments) {
+  const date = new Date().toISOString().slice(0,10);
+  const likes = {};
+  for (const c of comments) likes[c.comment_id] = c.likes;
+  try {
+    localStorage.setItem('ytcomments_snapshot', JSON.stringify({ date, likes }));
+  } catch(e) {}
+}
+
+function loadSnapshot() {
+  try {
+    const raw = localStorage.getItem('ytcomments_snapshot');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function applySnapshot(comments, snapshot) {
+  if (!snapshot) return;
+  for (const c of comments) {
+    if (snapshot.likes[c.comment_id] !== undefined) {
+      c.prev_likes = snapshot.likes[c.comment_id];
+      c.prev_refresh_date = snapshot.date;
+    }
+  }
 }
 
 // ── Main load flow ────────────────────────────────────────────────────────────
@@ -872,13 +901,18 @@ async function startLoading() {
 function logOut() {
   accessToken = null;
   localStorage.removeItem('ytcomments_cache');
+  localStorage.removeItem('ytcomments_snapshot');
   window.location.href = window.location.pathname;
 }
 
 async function doRefresh() {
   if (!accessToken) { alert('Please sign in first to refresh likes.'); return; }
-  const snapshot = Object.fromEntries(ALL_COMMENTS.map(c => [c.comment_id, c.likes]));
-  for (const c of ALL_COMMENTS) c.prev_likes = snapshot[c.comment_id];
+
+  // Load the existing snapshot (from a previous session) for traction comparison
+  const existingSnapshot = loadSnapshot();
+
+  // Save current likes as the new snapshot baseline BEFORE fetching new likes
+  saveSnapshot(ALL_COMMENTS);
 
   document.getElementById('app').style.display = 'none';
   document.getElementById('progress-screen').style.display = 'flex';
@@ -886,15 +920,19 @@ async function doRefresh() {
     const likeMap = await fetchLikeCounts(ALL_COMMENTS, setProgress);
     const matched = Object.keys(likeMap).length;
     if (matched === 0) {
-      throw new Error(`API returned 0 results for ${ALL_COMMENTS.length} comments. This usually means the OAuth token expired or the comment IDs aren't being recognized. Try signing out and back in.`);
+      throw new Error(`API returned 0 results for ${ALL_COMMENTS.length} comments. Try signing out and back in.`);
     }
     setProgress(`Got likes for ${matched.toLocaleString()} comments`, 62);
     for (const c of ALL_COMMENTS) c.likes = likeMap[c.comment_id] ?? c.likes;
+
     const { shorts, titles } = await fetchVideoInfo(ALL_COMMENTS, setProgress);
     for (const c of ALL_COMMENTS) {
       c.is_short    = shorts.has(c.video_id);
       c.video_title = titles[c.video_id] || c.video_title;
     }
+
+    // Apply the previous session's snapshot for traction scoring
+    applySnapshot(ALL_COMMENTS, existingSnapshot);
     computeScores(ALL_COMMENTS);
     saveCache(ALL_COMMENTS);
     setProgress('Done!', 100);
@@ -1264,7 +1302,9 @@ window._hidePieTip=function(){
 function showStatTab(group, tab) {
   document.querySelectorAll(`[data-stgroup="${group}"]`).forEach(el=>el.classList.toggle('active', el.dataset.sttab===tab));
   if (group==='toplists') {
-    const tooltips={heat:'Recent comments (≤18 months) ranked by momentum. Score = likes ÷ √(days since posted).',traction:'Comments 2+ years old that gained likes since your last refresh. Hit Refresh Likes twice to establish a baseline.',vcount:'Videos you commented on the most.',vlikes:'Videos where your comments earned the most total likes.',replied:'Your top-level comments that received the most replies.',longest:'Your longest comments by character count.'};
+    const _snap = loadSnapshot();
+  const _snapDate = _snap ? _snap.date : null;
+  const tooltips={heat:'Recent comments (≤18 months) ranked by momentum. Score = likes ÷ √(days since posted).',traction:_snapDate ? `Comments 2+ years old that gained likes since your snapshot on ${_snapDate}. Refresh again to update.` : 'Comments 2+ years old that gained likes since your last refresh. Hit Refresh Likes twice to establish a baseline.',vcount:'Videos you commented on the most.',vlikes:'Videos where your comments earned the most total likes.',replied:'Your top-level comments that received the most replies.',longest:'Your longest comments by character count.'};
     const el=document.getElementById('toplist-info-tooltip');
     if(el && tooltips[tab]) el.textContent=tooltips[tab];
   }
