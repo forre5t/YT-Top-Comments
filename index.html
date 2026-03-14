@@ -462,7 +462,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.9</span>
+      <span class="header-version">v0.2.0</span>
     </div>
   </header>
 
@@ -704,7 +704,6 @@ async function fetchLikeCounts(comments, onProgress) {
   const ids = comments.map(c => c.comment_id);
   const likeMap = {};
   const total = Math.ceil(ids.length / 50);
-  let lastError = null;
   for (let i = 0; i < ids.length; i += 50) {
     const batch = ids.slice(i, i + 50);
     onProgress(`Fetching likes: batch ${Math.floor(i/50)+1}/${total}`, (i/ids.length)*60);
@@ -712,16 +711,23 @@ async function fetchLikeCounts(comments, onProgress) {
       const data = await ytFetch('comments', {
         part: 'snippet', id: batch.join(','), textFormat: 'plainText'
       });
-      for (const item of (data.items || [])) {
-        likeMap[item.id] = item.snippet?.likeCount || 0;
+      const items = data.items || [];
+      if (i === 0) {
+        console.log(`[YT] Batch 1: sent ${batch.length} IDs, got ${items.length} items back`);
+        if (items.length > 0) console.log('[YT] Sample item:', JSON.stringify(items[0]).slice(0, 200));
+        else console.log('[YT] First ID sent:', batch[0]);
+      }
+      for (const item of items) {
+        likeMap[item.id] = parseInt(item.snippet?.likeCount || '0', 10);
       }
     } catch(e) {
-      lastError = e.message;
       console.warn('Like fetch warning:', e.message);
-      // If first batch fails, throw so user sees the real error
       if (i === 0) throw new Error('YouTube API error: ' + e.message);
     }
   }
+  const matched = Object.keys(likeMap).length;
+  console.log(`[YT] Total likes fetched: ${matched} of ${ids.length} comments`);
+  if (matched > 0) console.log('[YT] Sample likes:', Object.entries(likeMap).slice(0,3));
   return likeMap;
 }
 
@@ -891,7 +897,8 @@ async function doRefresh() {
   document.getElementById('progress-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   statsBuilt = false;
-  // Force full re-render of table with updated likes
+  // Clear built stats HTML so it fully rebuilds with fresh likes
+  document.getElementById('stats-content').innerHTML = '';
   filtered = [];
   renderedCount = 0;
   openIdx = null;
