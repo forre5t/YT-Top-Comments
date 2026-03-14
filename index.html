@@ -462,7 +462,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.7</span>
+      <span class="header-version">v0.1.8</span>
     </div>
   </header>
 
@@ -891,6 +891,12 @@ async function doRefresh() {
   document.getElementById('progress-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   statsBuilt = false;
+  // Force full re-render of table with updated likes
+  filtered = [];
+  renderedCount = 0;
+  openIdx = null;
+  document.getElementById('list').replaceChildren();
+  initTicker();
   render();
 }
 
