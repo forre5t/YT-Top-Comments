@@ -462,7 +462,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.6</span>
+      <span class="header-version">v0.1.7</span>
     </div>
   </header>
 
@@ -710,7 +710,7 @@ async function fetchLikeCounts(comments, onProgress) {
     onProgress(`Fetching likes: batch ${Math.floor(i/50)+1}/${total}`, (i/ids.length)*60);
     try {
       const data = await ytFetch('comments', {
-        part: 'snippet', id: batch.join(','), textFormat: 'plainText', maxResults: 50
+        part: 'snippet', id: batch.join(','), textFormat: 'plainText'
       });
       for (const item of (data.items || [])) {
         likeMap[item.id] = item.snippet?.likeCount || 0;
