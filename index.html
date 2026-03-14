@@ -462,7 +462,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.2.1</span>
+      <span class="header-version">v0.1.12</span>
     </div>
   </header>
 
@@ -714,8 +714,15 @@ async function fetchLikeCounts(comments, onProgress) {
       const items = data.items || [];
       if (i === 0) {
         console.log(`[YT] Batch 1: sent ${batch.length} IDs, got ${items.length} items back`);
-        if (items.length > 0) console.log('[YT] Sample item:', JSON.stringify(items[0]).slice(0, 200));
-        else console.log('[YT] First ID sent:', batch[0]);
+        console.log('[YT] First ID sent:', batch[0]);
+        if (items.length > 0) {
+          console.log('[YT] First ID returned:', items[0].id);
+          console.log('[YT] Like count:', items[0].snippet?.likeCount);
+        } else {
+          console.log('[YT] ⚠ API returned 0 items — IDs may not match');
+          // Try fetching a single comment to check format
+          console.log('[YT] Sample IDs from CSV:', batch.slice(0,3));
+        }
       }
       for (const item of items) {
         likeMap[item.id] = parseInt(item.snippet?.likeCount || '0', 10);
@@ -902,13 +909,25 @@ async function doRefresh() {
   filtered = [];
   renderedCount = 0;
   openIdx = null;
+  colSort = {col:'likes', dir:-1};
+  document.getElementById('sort').value = 'likes';
+  // Reset column header sort indicators
+  ['rank','comment','date','likes'].forEach(col => {
+    const el = document.getElementById('th-'+col);
+    if (el) { el.classList.remove('sort-asc','sort-desc'); }
+  });
+  const likesEl = document.getElementById('th-likes');
+  if (likesEl) likesEl.classList.add('sort-desc');
   document.getElementById('list').replaceChildren();
+  const topLiked = [...ALL_COMMENTS].sort((a,b)=>b.likes-a.likes).slice(0,3);
+  console.log('[YT] Top 3 comments by likes after refresh:', topLiked.map(c=>({likes:c.likes, text:c.text.slice(0,40)})));
   initTicker();
   render();
 }
 
 function launchApp(comments) {
   ALL_COMMENTS = comments;
+  colSort = {col:'likes', dir:-1};
   document.getElementById('progress-screen').style.display = 'none';
   document.getElementById('landing').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -1332,12 +1351,17 @@ function buildStats() {
     const vu=x.video_id?(x.is_short?`https://www.youtube.com/shorts/${x.video_id}`:`https://www.youtube.com/watch?v=${x.video_id}`):'';
     const typeLabel=(x.is_reply?'Reply':'Comment')+' on '+(x.is_short?'Short':'Video');
     const vt=x.video_title?esc(x.video_title.length>50?x.video_title.slice(0,50)+'…':x.video_title):x.video_id||'—';
-    return `${field('Posted',x.published_at||'—')}${field('Type',typeLabel)}${field('Likes',x.likes.toLocaleString())}${vu?field('Video',`<a href="${vu}" target="_blank" class="item-link">${vt}</a>`):''}${wu?field('Link',`<a href="${wu}" target="_blank">Jump to comment ↗</a>`):''}
+    const likesHtml=`<span style="display:inline-flex;align-items:center;gap:5px;"><span style="font-size:14px;">👍</span>${x.likes.toLocaleString()}</span>`;
+    return `${field('Posted',x.published_at||'—')}${field('Type',typeLabel)}${field('Likes',likesHtml)}${vu?field('Video',`<a href="${vu}" target="_blank" class="item-link">${vt}</a>`):''}${wu?field('Link',`<a href="${wu}" target="_blank">Jump to comment ↗</a>`):''}
     <div class="ti-detail-comment">${esc(x.text)}</div>`;
   }
   function videoDetail(d){
     const url=d.short?`https://www.youtube.com/shorts/${d.id}`:`https://www.youtube.com/watch?v=${d.id}`;
-    return `${field('Comments',(videoOrigCount[d.id]||0).toLocaleString())}${field('Replies',(videoReplyCount[d.id]||0).toLocaleString())}${field('Total Likes',d.likes.toLocaleString())}${field('Type',d.short?'Short':'Video')}${field('Link',`<a href="${url}" target="_blank">Open video ↗</a>`)}`;
+    const oc=videoOrigCount[d.id]||0, rc=videoReplyCount[d.id]||0;
+    const commentStr=oc>0?`${oc} comment${oc!==1?'s':''}`:null;
+    const replyStr=rc>0?`${rc} repl${rc!==1?'ies':'y'}`:null;
+    const countStr=[commentStr,replyStr].filter(Boolean).join(', ');
+    return `${field('Your Activity',countStr||'—')}${field('Total Likes',`<span style="display:inline-flex;align-items:center;gap:5px;"><span style="font-size:14px;">👍</span>${d.likes.toLocaleString()}</span>`)}${field('Type',d.short?'Short':'Video')}${field('Link',`<a href="${url}" target="_blank">Open video ↗</a>`)}`;
   }
   function makeTopItem(id,rank,textHtml,subHtml,valueHtml,detailHtml){
     return `<div id="ti-${id}" class="top-item" onclick="toggleTopItem('${id}')"><div class="ti-rank ${rankClass(rank)}">${rank+1}</div><div class="ti-text">${textHtml}</div>${subHtml?`<div class="ti-sub">${subHtml}</div>`:''} ${valueHtml}<span class="ti-chevron">▼</span></div><div id="tid-${id}" class="ti-detail">${detailHtml}</div>`;
@@ -1354,23 +1378,23 @@ function buildStats() {
     const txt=esc(x.text.length>90?x.text.slice(0,90)+'…':x.text);
     const maxH=heating.length?heating[0].heat_score:1, pct=Math.round(x.heat_score/maxH*100);
     const hc=pct>80?'var(--accent)':pct>50?'var(--gold)':'var(--accent2)';
-    return makeTopItem('h'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.published_at} · ${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:${hc}">${x.heat_score}</div>`,commentDetail(x));
+    return makeTopItem('h'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:${hc}">${x.heat_score}</div>`,commentDetail(x));
   }
   function tractionItem(x,i){
     const url=x.video_id?`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`:'';
     const txt=esc(x.text.length>90?x.text.slice(0,90)+'…':x.text);
     const age=Math.round((new Date()-new Date(x.published_at))/(365.25*24*3600*1000)*10)/10;
-    return makeTopItem('tr'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.published_at} · ${age}yr · ${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:var(--accent3);white-space:nowrap;">+${x.traction_score.toLocaleString()}</div>`,commentDetail(x));
+    return makeTopItem('tr'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${age}yr old · ${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:var(--accent3);white-space:nowrap;">+${x.traction_score.toLocaleString()}</div>`,commentDetail(x));
   }
   function repliedItem(x,i){
     const url=x.video_id?`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`:'';
     const txt=esc(x.text.length>90?x.text.slice(0,90)+'…':x.text), rc=x.reply_count||0;
-    return makeTopItem('r'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${rc} repl${rc!==1?'ies':'y'}`,`<div class="ti-likes" style="color:${rankColor(i)}">${x.likes.toLocaleString()}</div>`,commentDetail(x));
+    return makeTopItem('r'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${rc} repl${rc!==1?'ies':'y'} · ${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:${rankColor(i)}">${x.likes.toLocaleString()}</div>`,commentDetail(x));
   }
   function longestItem(x,i){
     const url=x.video_id?`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`:'';
     const txt=esc(x.text.length>120?x.text.slice(0,120)+'…':x.text);
-    return makeTopItem('l'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.text.length} chars`,`<div class="ti-likes" style="color:${rankColor(i)}">${x.likes.toLocaleString()}</div>`,commentDetail(x));
+    return makeTopItem('l'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.text.length} chars · ${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:${rankColor(i)}">${x.likes.toLocaleString()}</div>`,commentDetail(x));
   }
   function ghostList(msg){return `<div class="empty-box">${Array(10).fill(0).map(()=>`<div class="ghost-row"><div class="ghost-rank"></div><div class="ghost-text" style="width:${40+Math.random()*40}%"></div><div class="ghost-sub"></div><div class="ghost-val"></div></div>`).join('')}<div class="empty-box-msg"><span>${msg}</span></div></div>`;}
 
