@@ -100,7 +100,7 @@
   thead th.th-likes{text-align:right;width:80px;}
   thead th.th-rank{width:48px;}
   thead th.th-date{width:96px;}
-  #list{content-visibility:auto;contain-intrinsic-size:0 4000px;}
+  #list{}
   tbody tr.row-main{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
   tbody tr.row-main:hover{background:var(--surface);}
   tbody tr.row-main.open{background:var(--surface);border-bottom:none;}
@@ -294,7 +294,10 @@
   .howto-substep-label a:hover{text-decoration:underline;}
   .howto-diagram{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;overflow:hidden;}
 
-  /* error banner */
+  .load-more-indicator{text-align:center;padding:16px;color:var(--muted);font-size:12px;display:none;}
+  .load-more-indicator.visible{display:block;}
+  .load-more-indicator::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;margin-left:8px;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg);}}
   .err-banner{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);border-radius:6px;padding:10px 14px;font-size:12px;color:#ff8a8a;line-height:1.6;}
 </style>
 </head>
@@ -462,7 +465,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.12</span>
+      <span class="header-version">v0.1.13</span>
     </div>
   </header>
 
@@ -502,6 +505,7 @@
         <tbody id="list"></tbody>
       </table>
     </div>
+    <div class="load-more-indicator" id="load-more-indicator">Loading more comments</div>
   </div>
 
   <div id="page-stats" style="display:none;">
@@ -927,7 +931,13 @@ async function doRefresh() {
 
 function launchApp(comments) {
   ALL_COMMENTS = comments;
-  colSort = {col:'likes', dir:-1};
+  const hasLikes = comments.some(c => c.likes > 0);
+  if (hasLikes) {
+    colSort = {col:'likes', dir:-1};
+  } else {
+    // No likes yet — show newest first so list feels intentional
+    colSort = {col:'date', dir:-1};
+  }
   document.getElementById('progress-screen').style.display = 'none';
   document.getElementById('landing').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -940,12 +950,25 @@ function initApp() {
   initTicker();
   requestAnimationFrame(() => render());
 
+  // Place sentinel after the load-more indicator
   const sentinel = document.createElement('div');
-  sentinel.style.cssText = 'height:1px;width:100%;pointer-events:none;';
-  document.querySelector('.comments-list').appendChild(sentinel);
+  sentinel.id = 'scroll-sentinel';
+  sentinel.style.cssText = 'height:20px;width:100%;pointer-events:none;';
+  const indicator = document.getElementById('load-more-indicator');
+  indicator.after(sentinel);
+
+  // IntersectionObserver for normal scroll
   new IntersectionObserver(entries => {
     if (entries[0].isIntersecting) renderMore();
-  }, {rootMargin:'600px'}).observe(sentinel);
+  }, {rootMargin:'400px'}).observe(sentinel);
+
+  // Scroll fallback — fires when user scrolls near bottom
+  // (catches cases where IntersectionObserver doesn't fire due to fast scroll)
+  window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY + window.innerHeight;
+    const total = document.documentElement.scrollHeight;
+    if (scrolled >= total - 600) renderMore();
+  }, {passive: true});
 
   document.getElementById('search').addEventListener('input', () => {
     clearTimeout(window._searchTimer);
@@ -1033,7 +1056,11 @@ function buildRow(c, i) {
 }
 
 function renderMore() {
-  if (renderedCount >= filtered.length) return;
+  const indicator = document.getElementById('load-more-indicator');
+  if (renderedCount >= filtered.length) {
+    if (indicator) indicator.classList.remove('visible');
+    return;
+  }
   const end = Math.min(renderedCount + (renderedCount===0?PAGE_FIRST:PAGE), filtered.length);
   const tmp = document.createElement('tbody');
   tmp.innerHTML = filtered.slice(renderedCount, end).map((c,j) => buildRow(c, renderedCount+j)).join('');
@@ -1041,6 +1068,7 @@ function renderMore() {
   while (tmp.firstChild) frag.appendChild(tmp.firstChild);
   document.getElementById('list').appendChild(frag);
   renderedCount = end;
+  if (indicator) indicator.classList.toggle('visible', renderedCount < filtered.length);
 }
 
 function toggle(idx) {
