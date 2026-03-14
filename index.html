@@ -461,7 +461,7 @@
     </nav>
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
-      <span class="header-version">v0.0.46</span>
+      <span class="header-version">v0.0.47</span>
     </div>
   </header>
 
@@ -703,6 +703,7 @@ async function fetchLikeCounts(comments, onProgress) {
   const ids = comments.map(c => c.comment_id);
   const likeMap = {};
   const total = Math.ceil(ids.length / 50);
+  let lastError = null;
   for (let i = 0; i < ids.length; i += 50) {
     const batch = ids.slice(i, i + 50);
     onProgress(`Fetching likes: batch ${Math.floor(i/50)+1}/${total}`, (i/ids.length)*60);
@@ -714,7 +715,10 @@ async function fetchLikeCounts(comments, onProgress) {
         likeMap[item.id] = item.snippet?.likeCount || 0;
       }
     } catch(e) {
+      lastError = e.message;
       console.warn('Like fetch warning:', e.message);
+      // If first batch fails, throw so user sees the real error
+      if (i === 0) throw new Error('YouTube API error: ' + e.message);
     }
   }
   return likeMap;
@@ -1380,13 +1384,6 @@ function buildStats() {
       </div>
     </div>
     <div class="stats-section">
-      <h2>Comments by Year</h2>
-      <div class="bar-chart" id="year-bars">
-        ${years.map((y,yi)=>`<div class="bar-row" data-year="${y}" onclick="showYearDetail('${y}')" title="Click for ${y} breakdown"><div class="bar-label">${y}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(byYear[y].count/maxYearCount*100)}%;background:${yearColors[yi%yearColors.length]}"></div></div><div class="bar-val">${byYear[y].count}</div></div>`).join('')}
-      </div>
-      <div id="year-detail" data-year=""></div>
-    </div>
-    <div class="stats-section">
       <h2>Top Lists</h2>
       <div class="stat-tabs">
         <button class="stat-tab active" data-stgroup="toplists" data-sttab="heat" onclick="showStatTab('toplists','heat')">🔥 Heating Up</button>
@@ -1403,6 +1400,13 @@ function buildStats() {
       <div class="stat-panel" data-stgroup="toplists" data-sttab="vlikes"><div class="top-list">${topByLikes.length?topByLikes.map((d,i)=>videoItem(d,i,true,'vl')).join(''):ghostList('No video data found.')}</div></div>
       <div class="stat-panel" data-stgroup="toplists" data-sttab="replied"><div class="top-list">${mostReplied.filter(x=>(x.reply_count||0)>0).length?mostReplied.map(repliedItem).join(''):ghostList('No reply data found.')}</div></div>
       <div class="stat-panel" data-stgroup="toplists" data-sttab="longest"><div class="top-list">${longest.length?longest.map(longestItem).join(''):ghostList('No comments found.')}</div></div>
+    </div>
+    <div class="stats-section">
+      <h2>Comments by Year</h2>
+      <div class="bar-chart" id="year-bars">
+        ${years.map((y,yi)=>`<div class="bar-row" data-year="${y}" onclick="showYearDetail('${y}')" title="Click for ${y} breakdown"><div class="bar-label">${y}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(byYear[y].count/maxYearCount*100)}%;background:${yearColors[yi%yearColors.length]}"></div></div><div class="bar-val">${byYear[y].count}</div></div>`).join('')}
+      </div>
+      <div id="year-detail" data-year=""></div>
     </div>`;
 
   window.showPieTab=function(tab){
