@@ -465,7 +465,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.19</span>
+      <span class="header-version">v0.1.20</span>
     </div>
   </header>
 
@@ -1509,6 +1509,8 @@ function buildStats() {
           <div class="stat-pill"><div class="sp-label">Zero Likes</div><div class="sp-val" style="color:var(--muted2)">${(total-withLikes).toLocaleString()}</div><div class="sp-sub">${Math.round((total-withLikes)/total*100)}% of total</div></div>
           <div class="stat-pill"><div class="sp-label">🔥 Heating Up</div><div class="sp-val" style="color:#ff7f50">${hotCount}</div><div class="sp-sub">recent high-performers</div></div>
           <div class="stat-pill"><div class="sp-label">Old Traction</div><div class="sp-val" style="color:var(--accent3)">${traction.length}</div><div class="sp-sub">old comments gaining likes</div></div>
+          <div class="stat-pill"><div class="sp-label">Traction Baseline</div><div class="sp-val" style="font-size:16px;color:var(--muted2)">${_snapDate || '—'}</div><div class="sp-sub">${_snapDate ? 'refresh to update' : 'refresh once to set'}</div></div>
+          <div class="stat-pill"><div class="sp-label">Cache Size</div><div class="sp-val" style="font-size:18px;">${(JSON.stringify(localStorage).length/1024).toFixed(0)}<span style="font-size:13px;color:var(--muted2)"> KB</span></div><div class="sp-sub">of ~5,120 KB limit</div></div>
         </div>
       </div>
     </div>
