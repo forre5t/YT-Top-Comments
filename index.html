@@ -465,7 +465,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.14</span>
+      <span class="header-version">v0.1.16</span>
     </div>
   </header>
 
@@ -1109,7 +1109,8 @@ function render() {
   else if (colSort.col==='rank' && colSort.dir!==0)
     filtered.sort((a,b) => colSort.dir * (a.likes-b.likes));
   else if (sort==='likes' || colSort.col==='likes') {
-    const d = (colSort.col==='likes' && colSort.dir!==0) ? colSort.dir : -1;
+    // dir:-1 = descending (most likes first), dir:1 = ascending (least likes first)
+    const d = (colSort.col==='likes' && colSort.dir===1) ? 1 : -1;
     filtered.sort((a,b) => d*(b.likes-a.likes));
   }
   else if (sort==='heat')     filtered.sort((a,b) => b.heat_score-a.heat_score);
@@ -1515,21 +1516,19 @@ handleOAuthReturn();
 
 const _cached = loadCache();
 const _hasLikes = _cached && _cached.some(c => c.likes > 0);
+console.log('[Boot] cache:', _cached?.length ?? 'none', '| hasLikes:', _hasLikes, '| token:', !!accessToken);
 
 if (_cached && _cached.length > 0) {
   launchApp(_cached);
-  // If we just returned from OAuth (have a fresh token), auto-refresh likes
   if (accessToken) {
     if (sessionStorage.getItem('autoRefresh')) {
       sessionStorage.removeItem('autoRefresh');
       setTimeout(() => doRefresh(), 800);
     } else if (!_hasLikes) {
-      // Cache exists but all likes are 0 — auto-refresh now that we have a token
       setTimeout(() => doRefresh(), 800);
     }
   }
 } else {
-  // No cache — show landing
   if (accessToken) {
     const note = document.createElement('p');
     note.style.cssText = 'font-size:12px;color:var(--accent3);text-align:center;';
