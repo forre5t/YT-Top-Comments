@@ -341,137 +341,84 @@
     </div>
 
     <!-- Right: how-to instructions -->
-    <div class="howto-page" style="flex:1;min-width:0;padding-bottom:60px;">
-      <div class="howto-steps">
-      <div class="howto-card">
-        <div class="howto-step-num">1</div>
-        <div class="howto-card-body">
-          <h3>Download Your YouTube Comment History</h3>
-          <p>Go to <a href="https://takeout.google.com" target="_blank">takeout.google.com</a> and follow these steps:</p>
-          <div class="howto-substeps">
+    <div style="flex:1;min-width:0;padding-bottom:60px;">
+      <div class="landing-card" style="width:100%;">
+        <h2>How To Get Your CSV Files</h2>
+        <p>Go to <a href="https://takeout.google.com" target="_blank" style="color:var(--accent2);">takeout.google.com</a> and follow these 4 steps:</p>
 
-            <div class="howto-substep">
-              <div class="howto-substep-label">Click <strong>Deselect all</strong> — it's a blue link near the top right of the product list</div>
-              <div class="howto-diagram">
-                <svg viewBox="0 0 540 90" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;">
-                  <!-- Google page chrome -->
-                  <rect width="540" height="90" rx="6" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
-                  <!-- Top bar -->
-                  <rect width="540" height="56" rx="6" fill="#fff" stroke="#dadce0" stroke-width="1"/>
-                  <rect x="0" y="46" width="540" height="10" fill="#fff"/>
-                  <!-- Google logo area -->
-                  <text x="16" y="32" font-size="13" fill="#4285f4" font-family="sans-serif" font-weight="bold">G</text>
-                  <text x="24" y="32" font-size="13" fill="#ea4335" font-family="sans-serif" font-weight="bold">o</text>
-                  <text x="32" y="32" font-size="13" fill="#fbbc05" font-family="sans-serif" font-weight="bold">o</text>
-                  <text x="40" y="32" font-size="13" fill="#4285f4" font-family="sans-serif" font-weight="bold">g</text>
-                  <text x="48" y="32" font-size="13" fill="#34a853" font-family="sans-serif" font-weight="bold">l</text>
-                  <text x="54" y="32" font-size="13" fill="#ea4335" font-family="sans-serif" font-weight="bold">e</text>
-                  <text x="68" y="32" font-size="13" fill="#202124" font-family="sans-serif">Takeout</text>
-                  <!-- Page content -->
-                  <text x="16" y="70" font-size="11" fill="#202124" font-family="sans-serif" font-weight="500">Select data to include</text>
-                  <!-- Deselect all link -->
-                  <text x="360" y="70" font-size="11" fill="#1a73e8" font-family="sans-serif" text-decoration="underline">Deselect all</text>
-                  <!-- Arrow -->
-                  <polygon points="450,66 458,62 458,70" fill="#e53935"/>
-                  <text x="462" y="70" font-size="10" fill="#e53935" font-family="sans-serif" font-weight="bold">click this</text>
-                </svg>
-              </div>
+        <div class="howto-substeps" style="gap:14px;">
+
+          <div class="howto-substep">
+            <div class="howto-substep-label"><strong>1.</strong> Click <strong>Deselect all</strong> — it's a blue link near the top right</div>
+            <div class="howto-diagram">
+              <svg viewBox="0 0 500 56" xmlns="http://www.w3.org/2000/svg" style="width:100%;">
+                <rect width="500" height="56" rx="5" fill="#fff" stroke="#dadce0" stroke-width="1"/>
+                <text x="12" y="22" font-size="12" fill="#202124" font-family="sans-serif" font-weight="500">Google Takeout</text>
+                <text x="12" y="40" font-size="11" fill="#5f6368" font-family="sans-serif">Select data to include in your export</text>
+                <text x="350" y="40" font-size="11" fill="#1a73e8" font-family="sans-serif" text-decoration="underline">Deselect all</text>
+                <polygon points="422,36 430,32 430,40" fill="#e53935"/>
+                <text x="434" y="40" font-size="10" fill="#e53935" font-family="sans-serif" font-weight="600">click this</text>
+              </svg>
             </div>
-
-            <div class="howto-substep">
-              <div class="howto-substep-label">Scroll down, find <strong>YouTube and YouTube Music</strong>, and check the box next to it</div>
-              <div class="howto-diagram">
-                <svg viewBox="0 0 540 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;">
-                  <rect width="540" height="150" rx="6" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
-                  <!-- List items - unchecked -->
-                  <rect x="12" y="10" width="380" height="38" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1"/>
-                  <rect x="24" y="21" width="16" height="16" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
-                  <text x="48" y="33" font-size="11" fill="#80868b" font-family="sans-serif">Google Drive</text>
-                  <rect x="12" y="54" width="380" height="38" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1"/>
-                  <rect x="24" y="65" width="16" height="16" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
-                  <text x="48" y="77" font-size="11" fill="#80868b" font-family="sans-serif">Google Photos</text>
-                  <!-- YouTube row - checked + highlighted -->
-                  <rect x="12" y="98" width="380" height="42" rx="4" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
-                  <rect x="24" y="110" width="16" height="16" rx="2" fill="#1a73e8" stroke="#1a73e8" stroke-width="1.5"/>
-                  <text x="28" y="122" font-size="11" fill="#fff" font-family="sans-serif" font-weight="bold">✓</text>
-                  <text x="48" y="122" font-size="11" fill="#202124" font-family="sans-serif" font-weight="500">YouTube and YouTube Music</text>
-                  <!-- Arrow -->
-                  <polygon points="397,119 405,115 405,123" fill="#1a73e8"/>
-                  <text x="409" y="123" font-size="10" fill="#1a73e8" font-family="sans-serif" font-weight="bold">check only this</text>
-                </svg>
-              </div>
-            </div>
-
-            <div class="howto-substep">
-              <div class="howto-substep-label">Click <strong>All YouTube data included</strong> → uncheck everything <em>except</em> <strong>my-comments</strong> → click <strong>OK</strong></div>
-              <div class="howto-diagram">
-                <svg viewBox="0 0 540 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;">
-                  <rect width="540" height="200" rx="6" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
-                  <!-- The button to click -->
-                  <rect x="12" y="12" width="200" height="30" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1"/>
-                  <text x="112" y="31" font-size="10" fill="#1a73e8" font-family="sans-serif" text-anchor="middle">All YouTube data included ▾</text>
-                  <polygon points="220,27 228,23 228,31" fill="#e53935"/>
-                  <text x="232" y="31" font-size="10" fill="#e53935" font-family="sans-serif" font-weight="bold">click this first</text>
-                  <!-- Modal dialog -->
-                  <rect x="12" y="50" width="340" height="140" rx="6" fill="#fff" stroke="#dadce0" stroke-width="1" filter="url(#shadow)"/>
-                  <text x="28" y="72" font-size="12" fill="#202124" font-family="sans-serif" font-weight="600">YouTube data to include</text>
-                  <!-- Unchecked items -->
-                  <rect x="28" y="84" width="14" height="14" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
-                  <text x="50" y="95" font-size="11" fill="#80868b" font-family="sans-serif">history</text>
-                  <rect x="28" y="106" width="14" height="14" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
-                  <text x="50" y="117" font-size="11" fill="#80868b" font-family="sans-serif">playlists</text>
-                  <rect x="28" y="128" width="14" height="14" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
-                  <text x="50" y="139" font-size="11" fill="#80868b" font-family="sans-serif">subscriptions</text>
-                  <!-- my-comments - checked -->
-                  <rect x="24" y="148" width="200" height="22" rx="3" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
-                  <rect x="28" y="152" width="14" height="14" rx="2" fill="#1a73e8" stroke="#1a73e8"/>
-                  <text x="32" y="163" font-size="10" fill="#fff" font-family="sans-serif" font-weight="bold">✓</text>
-                  <text x="50" y="163" font-size="11" fill="#202124" font-family="sans-serif" font-weight="600">my-comments</text>
-                  <polygon points="228,159 236,155 236,163" fill="#1a73e8"/>
-                  <text x="240" y="163" font-size="10" fill="#1a73e8" font-family="sans-serif" font-weight="bold">keep only this checked</text>
-                  <!-- OK button -->
-                  <rect x="280" y="174" width="56" height="28" rx="4" fill="#1a73e8"/>
-                  <text x="308" y="192" font-size="12" fill="#fff" font-family="sans-serif" font-weight="500" text-anchor="middle">OK</text>
-                  <polygon points="340,188 348,184 348,192" fill="#e53935"/>
-                  <text x="352" y="192" font-size="10" fill="#e53935" font-family="sans-serif" font-weight="bold">then click OK</text>
-                </svg>
-              </div>
-            </div>
-
-            <div class="howto-substep">
-              <div class="howto-substep-label">Click <strong>Next step</strong> → <strong>Create export</strong>. Google emails a download link — unzip it and find the <code>my-comments</code> folder</div>
-              <div class="howto-diagram">
-                <svg viewBox="0 0 540 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;">
-                  <rect width="540" height="80" rx="6" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
-                  <!-- Step boxes -->
-                  <rect x="12" y="18" width="100" height="44" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1"/>
-                  <text x="62" y="38" font-size="9" fill="#5f6368" text-anchor="middle" font-family="sans-serif">click</text>
-                  <text x="62" y="52" font-size="11" fill="#1a73e8" text-anchor="middle" font-family="sans-serif" font-weight="500">Next step</text>
-                  <text x="116" y="43" font-size="18" fill="#dadce0">›</text>
-                  <rect x="124" y="18" width="110" height="44" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1"/>
-                  <text x="179" y="38" font-size="9" fill="#5f6368" text-anchor="middle" font-family="sans-serif">click</text>
-                  <text x="179" y="52" font-size="11" fill="#1a73e8" text-anchor="middle" font-family="sans-serif" font-weight="500">Create export</text>
-                  <text x="238" y="43" font-size="18" fill="#dadce0">›</text>
-                  <rect x="246" y="18" width="120" height="44" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1"/>
-                  <text x="306" y="38" font-size="9" fill="#5f6368" text-anchor="middle" font-family="sans-serif">email arrives →</text>
-                  <text x="306" y="52" font-size="11" fill="#202124" text-anchor="middle" font-family="sans-serif" font-weight="500">Download .zip</text>
-                  <text x="370" y="43" font-size="18" fill="#dadce0">›</text>
-                  <rect x="378" y="18" width="148" height="44" rx="4" fill="#e8f5e9" stroke="#34a853" stroke-width="1.5"/>
-                  <text x="452" y="38" font-size="9" fill="#5f6368" text-anchor="middle" font-family="sans-serif">unzip →</text>
-                  <text x="452" y="52" font-size="11" fill="#188038" text-anchor="middle" font-family="sans-serif" font-weight="600">my-comments folder</text>
-                </svg>
-              </div>
-            </div>
-
-            <div class="howto-substep">
-              <div class="howto-substep-label">Drop all the <code>comments.csv</code>, <code>comments(1).csv</code> etc. files into the upload box on the left</div>
-            </div>
-
           </div>
+
+          <div class="howto-substep">
+            <div class="howto-substep-label"><strong>2.</strong> Scroll down and check only <strong>YouTube and YouTube Music</strong></div>
+            <div class="howto-diagram">
+              <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;">
+                <rect width="500" height="100" rx="5" fill="#fff" stroke="#dadce0" stroke-width="1"/>
+                <rect x="12" y="10" width="310" height="26" rx="3" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+                <rect x="20" y="17" width="12" height="12" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
+                <text x="40" y="27" font-size="11" fill="#80868b" font-family="sans-serif">Google Drive</text>
+                <rect x="12" y="42" width="310" height="26" rx="3" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+                <rect x="20" y="49" width="12" height="12" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
+                <text x="40" y="59" font-size="11" fill="#80868b" font-family="sans-serif">Google Photos</text>
+                <rect x="12" y="68" width="310" height="26" rx="3" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+                <rect x="20" y="75" width="12" height="12" rx="2" fill="#1a73e8"/>
+                <text x="23" y="85" font-size="9" fill="#fff" font-family="sans-serif" font-weight="bold">✓</text>
+                <text x="40" y="85" font-size="11" fill="#202124" font-family="sans-serif" font-weight="500">YouTube and YouTube Music</text>
+                <polygon points="326,81 334,77 334,85" fill="#1a73e8"/>
+                <text x="338" y="85" font-size="10" fill="#1a73e8" font-family="sans-serif" font-weight="600">only this</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="howto-substep">
+            <div class="howto-substep-label"><strong>3.</strong> Click <strong>All YouTube data included</strong> → uncheck everything except <strong>my-comments</strong> → click <strong>OK</strong></div>
+            <div class="howto-diagram">
+              <svg viewBox="0 0 500 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;">
+                <rect width="500" height="130" rx="5" fill="#fff" stroke="#dadce0" stroke-width="1"/>
+                <rect x="12" y="8" width="188" height="24" rx="3" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+                <text x="106" y="24" font-size="10" fill="#1a73e8" font-family="sans-serif" text-anchor="middle">All YouTube data included ▾</text>
+                <polygon points="208,20 216,16 216,24" fill="#e53935"/>
+                <text x="220" y="24" font-size="10" fill="#e53935" font-family="sans-serif" font-weight="600">click this</text>
+                <rect x="12" y="38" width="300" height="84" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1"/>
+                <text x="24" y="56" font-size="11" fill="#202124" font-family="sans-serif" font-weight="600">YouTube data to include</text>
+                <rect x="24" y="64" width="11" height="11" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
+                <text x="42" y="73" font-size="10" fill="#80868b" font-family="sans-serif">history</text>
+                <rect x="24" y="80" width="11" height="11" rx="2" fill="#fff" stroke="#80868b" stroke-width="1.5"/>
+                <text x="42" y="89" font-size="10" fill="#80868b" font-family="sans-serif">playlists</text>
+                <rect x="20" y="96" width="160" height="18" rx="3" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+                <rect x="24" y="99" width="11" height="11" rx="2" fill="#1a73e8"/>
+                <text x="27" y="108" font-size="8" fill="#fff" font-weight="bold">✓</text>
+                <text x="42" y="109" font-size="10" fill="#202124" font-family="sans-serif" font-weight="600">my-comments</text>
+                <polygon points="184,105 192,101 192,109" fill="#1a73e8"/>
+                <text x="196" y="109" font-size="9" fill="#1a73e8" font-family="sans-serif" font-weight="600">keep only this</text>
+                <rect x="246" y="108" width="50" height="22" rx="4" fill="#1a73e8"/>
+                <text x="271" y="123" font-size="12" fill="#fff" font-family="sans-serif" font-weight="500" text-anchor="middle">OK</text>
+                <polygon points="300,119 308,115 308,123" fill="#e53935"/>
+                <text x="312" y="123" font-size="9" fill="#e53935" font-family="sans-serif" font-weight="600">then click OK</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="howto-substep">
+            <div class="howto-substep-label"><strong>4.</strong> Click <strong>Next step</strong> → <strong>Create export</strong>. Google emails a link — download, unzip, and drop the CSV files from the <code>my-comments</code> folder into the box on the left</div>
+          </div>
+
         </div>
       </div>
-    </div><!-- /howto-steps -->
-    </div><!-- /howto-page right column -->
+    </div><!-- /right column -->
   </div><!-- /landing-inner -->
 </div><!-- /landing -->
 
@@ -497,7 +444,7 @@
       <button class="btn-refresh" onclick="resetCache()" title="Clear cached likes and video data — keeps your comments, requires re-upload of CSVs">Reset cache</button>
       <button class="btn-refresh" onclick="deleteAllData()" style="border-color:#555;color:#555;" title="Delete everything — cache, snapshot, all stored data">Delete data</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.23</span>
+      <span class="header-version">v0.1.24</span>
     </div>
   </header>
 
