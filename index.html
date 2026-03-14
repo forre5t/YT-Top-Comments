@@ -461,7 +461,7 @@
     </nav>
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
-      <span class="header-version">v0.0.45</span>
+      <span class="header-version">v0.0.46</span>
     </div>
   </header>
 
@@ -511,7 +511,7 @@
 <script>
 // ── Config ────────────────────────────────────────────────────────────────────
 // YOUR Google OAuth Web App client_id goes here:
-const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
+const CLIENT_ID = '572924482375-1cso6pm10le6pc91bqfr2fc266hd9v65.apps.googleusercontent.com';
 const SCOPES    = 'https://www.googleapis.com/auth/youtube.readonly';
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -1420,21 +1420,41 @@ function buildStats() {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 handleOAuthReturn();
 
-// If we have a cache and just returned from OAuth, offer to use cache
 const _cached = loadCache();
-if (_cached && accessToken) {
-  // Auto-populate note — user can still re-upload CSVs
-  const note = document.createElement('p');
-  note.style.cssText = 'font-size:12px;color:var(--accent3);text-align:center;';
-  note.textContent = `✓ Found ${_cached.length.toLocaleString()} cached comments — or upload new CSVs below.`;
-  document.getElementById('drop-zone').before(note);
-  // Allow launching from cache directly
-  const btn = document.createElement('button');
-  btn.className = 'btn-primary';
-  btn.textContent = `Use cached data (${_cached.length.toLocaleString()} comments)`;
-  btn.style.marginTop = '-8px';
-  btn.onclick = () => launchApp(_cached);
-  document.getElementById('btn-load').before(btn);
+
+if (_cached && _cached.length > 0) {
+  // We have cached data — launch the app immediately, no sign-in needed
+  // The Refresh likes button will re-trigger OAuth if the token is missing
+  launchApp(_cached);
+} else if (accessToken && _cached) {
+  // Just returned from OAuth, have token + cache — launch immediately
+  launchApp(_cached);
+} else {
+  // No cache — show landing, but if we just got a token show a helpful note
+  if (accessToken) {
+    const note = document.createElement('p');
+    note.style.cssText = 'font-size:12px;color:var(--accent3);text-align:center;';
+    note.textContent = '✓ Signed in! Now drop your CSV files below.';
+    document.getElementById('drop-zone').before(note);
+  }
+}
+
+// Refresh likes re-triggers OAuth if token is gone (e.g. page was refreshed)
+const _origDoRefresh = doRefresh;
+window.doRefresh = async function() {
+  if (!accessToken) {
+    // Save a flag so after OAuth redirect we auto-refresh
+    sessionStorage.setItem('autoRefresh', '1');
+    startOAuth();
+    return;
+  }
+  await _origDoRefresh();
+};
+
+// Auto-refresh if we came back from OAuth with that flag set
+if (accessToken && sessionStorage.getItem('autoRefresh')) {
+  sessionStorage.removeItem('autoRefresh');
+  if (_cached) setTimeout(() => doRefresh(), 500);
 }
 </script>
 </body>
