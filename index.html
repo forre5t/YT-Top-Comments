@@ -18,6 +18,8 @@
 
   /* ── Landing / Auth screen ── */
   #landing{display:flex;flex-direction:column;align-items:center;min-height:100vh;gap:32px;padding:40px 20px;}
+  .landing-inner{display:flex;gap:40px;align-items:flex-start;width:100%;max-width:1100px;}
+  @media(max-width:900px){.landing-inner{flex-direction:column;align-items:center;}}
   .landing-logo{display:flex;align-items:center;gap:14px;}
   .landing-logo .yt-icon{background:var(--accent);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:18px;padding:5px 10px;border-radius:4px;letter-spacing:1px;}
   .landing-logo h1{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;}
@@ -310,36 +312,38 @@
     <h1>Top Comments</h1>
   </div>
 
-  <div class="landing-card">
-    <h2>Sign In With Google</h2>
-    <p>The app needs access to your YouTube account to fetch live like counts for your comments.</p>
-    <button class="btn-google" id="btn-signin" onclick="startOAuth()">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
-      Sign in with Google
-    </button>
-    <div id="auth-error" class="err-banner" style="display:none;"></div>
+  <div class="landing-inner">
+    <!-- Left: sign-in card -->
+    <div class="landing-card" style="flex-shrink:0;width:100%;max-width:420px;">
+      <h2>Sign In With Google</h2>
+      <p>The app needs access to your YouTube account to fetch live like counts for your comments.</p>
+      <button class="btn-google" id="btn-signin" onclick="startOAuth()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+        Sign in with Google
+      </button>
+      <div id="auth-error" class="err-banner" style="display:none;"></div>
 
-    <div class="landing-divider">then</div>
+      <div class="landing-divider">then</div>
 
-    <div>
-      <p style="margin-bottom:12px;">Drop your YouTube Takeout CSV files here:</p>
-      <div class="drop-zone" id="drop-zone">
-        <input type="file" id="csv-input" multiple accept=".csv" onchange="onFilesSelected(this.files)">
-        <div class="dz-icon">📂</div>
-        <div class="dz-title">Drop CSV files here or click to browse</div>
-        <div class="dz-sub">From Google Takeout → YouTube → my-comments</div>
+      <div>
+        <p style="margin-bottom:12px;">Drop your YouTube Takeout CSV files here:</p>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="csv-input" multiple accept=".csv" onchange="onFilesSelected(this.files)">
+          <div class="dz-icon">📂</div>
+          <div class="dz-title">Drop CSV files here or click to browse</div>
+          <div class="dz-sub">From Google Takeout → YouTube → my-comments</div>
+        </div>
+        <div class="file-list" id="file-list"></div>
       </div>
-      <div class="file-list" id="file-list"></div>
+
+      <button class="btn-primary" id="btn-load" disabled onclick="startLoading()">Load My Comments</button>
+      <div id="load-error" class="err-banner" style="display:none;"></div>
     </div>
 
-    <button class="btn-primary" id="btn-load" disabled onclick="startLoading()">Load My Comments</button>
-    <div id="load-error" class="err-banner" style="display:none;"></div>
-  </div>
-
-  <!-- How To — visible before sign-in -->
-  <div class="howto-page" style="max-width:560px;width:100%;padding-bottom:60px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--muted2);margin-bottom:16px;padding-top:8px;">First time? Here's how to get your CSV files:</div>
-    <div class="howto-steps">
+    <!-- Right: how-to instructions -->
+    <div class="howto-page" style="flex:1;min-width:0;padding-bottom:60px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--muted2);margin-bottom:16px;">First time? Here's how to get your CSV files:</div>
+      <div class="howto-steps">
       <div class="howto-card">
         <div class="howto-step-num">1</div>
         <div class="howto-card-body">
@@ -441,9 +445,10 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+    </div><!-- /howto-steps -->
+    </div><!-- /howto-page right column -->
+  </div><!-- /landing-inner -->
+</div><!-- /landing -->
 
 <!-- ── Progress screen ── -->
 <div id="progress-screen">
@@ -464,8 +469,10 @@
     </nav>
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
+      <button class="btn-refresh" onclick="resetCache()" title="Clear cached likes and video data — keeps your comments, requires re-upload of CSVs">Reset cache</button>
+      <button class="btn-refresh" onclick="deleteAllData()" style="border-color:#555;color:#555;" title="Delete everything — cache, snapshot, all stored data">Delete data</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.21</span>
+      <span class="header-version">v0.1.22</span>
     </div>
   </header>
 
@@ -899,9 +906,24 @@ async function startLoading() {
 }
 
 function logOut() {
+  // Sign out only clears the OAuth token — cache and data are preserved
+  // so you don't need to re-upload CSVs on next visit
   accessToken = null;
+  window.location.href = window.location.pathname;
+}
+
+function resetCache() {
+  if (!confirm('Reset cache? This clears your stored comments and likes. You\'ll need to re-upload your CSVs next time.')) return;
   localStorage.removeItem('ytcomments_cache');
   localStorage.removeItem('ytcomments_snapshot');
+  accessToken = null;
+  window.location.href = window.location.pathname;
+}
+
+function deleteAllData() {
+  if (!confirm('Delete all stored data? This cannot be undone.')) return;
+  localStorage.clear();
+  accessToken = null;
   window.location.href = window.location.pathname;
 }
 
