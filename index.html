@@ -465,7 +465,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.20</span>
+      <span class="header-version">v0.1.21</span>
     </div>
   </header>
 
@@ -1302,9 +1302,7 @@ window._hidePieTip=function(){
 function showStatTab(group, tab) {
   document.querySelectorAll(`[data-stgroup="${group}"]`).forEach(el=>el.classList.toggle('active', el.dataset.sttab===tab));
   if (group==='toplists') {
-    const _snap = loadSnapshot();
-  const _snapDate = _snap ? _snap.date : null;
-  const tooltips={heat:'Recent comments (≤18 months) ranked by momentum. Score = likes ÷ √(days since posted).',traction:_snapDate ? `Comments 2+ years old that gained likes since your snapshot on ${_snapDate}. Refresh again to update.` : 'Comments 2+ years old that gained likes since your last refresh. Hit Refresh Likes twice to establish a baseline.',vcount:'Videos you commented on the most.',vlikes:'Videos where your comments earned the most total likes.',replied:'Your top-level comments that received the most replies.',longest:'Your longest comments by character count.'};
+    const tooltips={heat:'Recent comments (≤18 months) ranked by momentum. Score = likes ÷ √(days since posted).',traction:_snapDate ? `Comments 2+ years old that gained likes since your snapshot on ${_snapDate}. Refresh again to update.` : 'Comments 2+ years old that gained likes since your last refresh. Hit Refresh Likes twice to establish a baseline.',vcount:'Videos you commented on the most.',vlikes:'Videos where your comments earned the most total likes.',replied:'Your top-level comments that received the most replies.',longest:'Your longest comments by character count.'};
     const el=document.getElementById('toplist-info-tooltip');
     if(el && tooltips[tab]) el.textContent=tooltips[tab];
   }
@@ -1400,6 +1398,8 @@ function showYearDetail(year) {
 
 function buildStats() {
   const c=ALL_COMMENTS, total=c.length;
+  const _snap = loadSnapshot();
+  const _snapDate = _snap ? _snap.date : null;
   const totalLikes=c.reduce((s,x)=>s+x.likes,0), avgLikes=(totalLikes/total).toFixed(1);
   const maxLk=Math.max(...c.map(x=>x.likes)), replies=c.filter(x=>x.is_reply).length;
   const shorts=c.filter(x=>x.is_short).length, videos=total-shorts;
