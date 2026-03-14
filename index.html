@@ -461,7 +461,7 @@
     </nav>
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
-      <span class="header-version">v0.0.44</span>
+      <span class="header-version">v0.0.45</span>
     </div>
   </header>
 
@@ -689,8 +689,9 @@ async function loadCSVFiles(files) {
 async function ytFetch(endpoint, params) {
   const url = new URL('https://www.googleapis.com/youtube/v3/' + endpoint);
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-  url.searchParams.set('access_token', accessToken);
-  const resp = await fetch(url);
+  const resp = await fetch(url, {
+    headers: { 'Authorization': 'Bearer ' + accessToken }
+  });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err?.error?.message || `HTTP ${resp.status}`);
