@@ -461,7 +461,7 @@
     </nav>
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
-      <span class="header-version">v0.0.47</span>
+      <span class="header-version">v0.1.5</span>
     </div>
   </header>
 
@@ -853,7 +853,6 @@ async function startLoading() {
 
 async function doRefresh() {
   if (!accessToken) { alert('Please sign in first to refresh likes.'); return; }
-  // snapshot current likes
   const snapshot = Object.fromEntries(ALL_COMMENTS.map(c => [c.comment_id, c.likes]));
   for (const c of ALL_COMMENTS) c.prev_likes = snapshot[c.comment_id];
 
@@ -861,6 +860,11 @@ async function doRefresh() {
   document.getElementById('progress-screen').style.display = 'flex';
   try {
     const likeMap = await fetchLikeCounts(ALL_COMMENTS, setProgress);
+    const matched = Object.keys(likeMap).length;
+    if (matched === 0) {
+      throw new Error(`API returned 0 results for ${ALL_COMMENTS.length} comments. This usually means the OAuth token expired or the comment IDs aren't being recognized. Try signing out and back in.`);
+    }
+    setProgress(`Got likes for ${matched.toLocaleString()} comments`, 62);
     for (const c of ALL_COMMENTS) c.likes = likeMap[c.comment_id] ?? c.likes;
     const { shorts, titles } = await fetchVideoInfo(ALL_COMMENTS, setProgress);
     for (const c of ALL_COMMENTS) {
@@ -872,7 +876,10 @@ async function doRefresh() {
     setProgress('Done!', 100);
     await new Promise(r => setTimeout(r, 300));
   } catch(e) {
+    document.getElementById('progress-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
     alert('Refresh error: ' + e.message);
+    return;
   }
   document.getElementById('progress-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
