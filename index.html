@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Top YouTube Comments</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0a; --surface:#111; --surface2:#181818; --surface3:#1e1e1e;
+    --border:#1e1e1e; --border2:#2a2a2a;
+    --accent:#e63946; --accent2:#457b9d; --accent3:#2a9d8f;
+    --text:#f0f0f0; --muted:#555; --muted2:#888;
+    --gold:#f4a526; --silver:#a8b2c1; --bronze:#cd7f32;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+
+  /* ── Landing / Auth screen ── */
+  #landing{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:32px;padding:40px 20px;}
+  .landing-logo{display:flex;align-items:center;gap:14px;}
+  .landing-logo .yt-icon{background:var(--accent);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:18px;padding:5px 10px;border-radius:4px;letter-spacing:1px;}
+  .landing-logo h1{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;}
+  .landing-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;max-width:480px;width:100%;display:flex;flex-direction:column;gap:20px;}
+  .landing-card h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--text);}
+  .landing-card p{font-size:13px;color:var(--muted2);line-height:1.7;}
+  .btn-google{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1a1a1a;border:none;border-radius:8px;padding:12px 20px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;width:100%;}
+  .btn-google:hover{background:#f0f0f0;transform:translateY(-1px);}
+  .btn-google svg{flex-shrink:0;}
+  .landing-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;}
+  .landing-divider::before,.landing-divider::after{content:'';flex:1;height:1px;background:var(--border2);}
+
+  /* Drop zone */
+  .drop-zone{border:2px dashed var(--border2);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+  .drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent2);background:rgba(69,123,157,.05);}
+  .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .drop-zone .dz-icon{font-size:28px;margin-bottom:8px;}
+  .drop-zone .dz-title{font-size:13px;color:var(--text);font-weight:500;margin-bottom:4px;}
+  .drop-zone .dz-sub{font-size:11px;color:var(--muted);}
+  .drop-zone.has-files{border-color:var(--accent3);background:rgba(42,157,143,.06);}
+  .drop-zone.has-files .dz-icon::after{content:' ✓';}
+  .file-list{display:flex;flex-direction:column;gap:4px;margin-top:10px;max-height:100px;overflow-y:auto;}
+  .file-chip{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--muted2);}
+  .file-chip .fc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px 20px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;width:100%;}
+  .btn-primary:hover{background:#c9313d;transform:translateY(-1px);}
+  .btn-primary:disabled{background:var(--surface3);color:var(--muted);cursor:not-allowed;transform:none;}
+
+  /* Progress */
+  #progress-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;padding:40px;}
+  .progress-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;}
+  .progress-bar-wrap{width:100%;max-width:420px;background:var(--surface2);border-radius:6px;height:8px;overflow:hidden;border:1px solid var(--border2);}
+  .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:6px;transition:width .3s ease;width:0%;}
+  .progress-msg{font-size:13px;color:var(--muted2);text-align:center;max-width:420px;}
+  .progress-detail{font-size:11px;color:var(--muted);font-family:monospace;}
+
+  /* ── Main app (hidden until loaded) ── */
+  #app{display:none;}
+
+  /* ── Header ── */
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;}
+  .yt-icon{background:var(--accent);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:12px;padding:3px 7px;border-radius:3px;letter-spacing:1px;}
+  header h1{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;}
+  .header-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .header-version{font-size:11px;color:var(--muted);letter-spacing:0.5px;}
+  .btn-refresh{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:5px 12px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;}
+  .btn-refresh:hover{border-color:var(--accent2);color:var(--text);}
+  .tabs{display:flex;gap:4px;margin-left:24px;}
+  .tab{background:transparent;border:1px solid transparent;color:var(--muted2);padding:6px 14px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
+  .tab:hover{color:var(--text);}
+  .tab.active{border-color:var(--accent);color:var(--text);}
+
+  /* ── Controls ── */
+  .controls{padding:10px 32px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:49px;z-index:99;}
+  .search-wrap{position:relative;display:inline-flex;align-items:center;}
+  input[type="text"]{background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:7px 32px 7px 12px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:13px;width:240px;outline:none;transition:border-color .2s;}
+  input[type="text"]:focus{border-color:var(--accent);}
+  .search-clear{position:absolute;right:8px;background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px;border-radius:3px;line-height:1;display:none;transition:color .15s;}
+  .search-clear:hover{color:var(--text);}
+  .search-clear.visible{display:block;}
+  .sort-wrap{position:relative;display:inline-flex;align-items:center;}
+  .sort-wrap select{appearance:none;-webkit-appearance:none;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:7px 30px 7px 12px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+  .sort-wrap::after{content:'';position:absolute;right:11px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--muted2);pointer-events:none;}
+  .filter-btn{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:7px 12px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;}
+  .filter-btn:hover{color:var(--text);}
+  .filter-btn.active{border-color:var(--accent);color:var(--text);background:rgba(230,57,70,.08);}
+  .divider{width:1px;height:20px;background:var(--border2);margin:0 4px;}
+  .result-count{margin-left:auto;font-size:12px;color:var(--muted);}
+
+  /* ── Table ── */
+  .comments-list{padding:0 32px 32px;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{padding:10px 12px;text-align:left;font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:88px;background:var(--bg);z-index:98;}
+  thead th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
+  thead th.sortable:hover{color:var(--muted2);}
+  thead th.sort-asc,thead th.sort-desc{color:var(--text);}
+  thead th.sort-asc .sort-ind::after{content:' ↑';}
+  thead th.sort-desc .sort-ind::after{content:' ↓';}
+  thead th.sortable:not(.sort-asc):not(.sort-desc) .sort-ind::after{content:' ↕';opacity:0.3;}
+  thead th.th-likes{text-align:right;width:80px;}
+  thead th.th-rank{width:48px;}
+  thead th.th-date{width:96px;}
+  #list{content-visibility:auto;contain-intrinsic-size:0 4000px;}
+  tbody tr.row-main{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+  tbody tr.row-main:hover{background:var(--surface);}
+  tbody tr.row-main.open{background:var(--surface);border-bottom:none;}
+  tbody tr.row-detail{border-bottom:1px solid var(--border);}
+  td{padding:8px 12px;vertical-align:middle;font-size:13px;}
+  td.td-rank{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--muted);width:48px;}
+  td.td-rank.rank-1{color:var(--gold);}
+  td.td-rank.rank-2{color:var(--silver);}
+  td.td-rank.rank-3{color:var(--bronze);}
+  td.td-text{color:var(--text);max-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  td.td-date{color:var(--muted2);font-size:12px;white-space:nowrap;width:96px;}
+  td.td-likes{text-align:right;width:80px;white-space:nowrap;}
+  .likes-val{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;color:var(--muted2);}
+  .likes-val.lv-gold{color:var(--gold);}
+  .likes-val.lv-silver{color:var(--silver);}
+  .likes-val.lv-bronze{color:var(--bronze);}
+  .likes-val.lv-high{color:var(--accent);}
+  .likes-val.lv-mid{color:var(--accent2);}
+  .likes-val.lv-low{color:var(--accent3);}
+
+  /* ── Badges ── */
+  .badge{display:inline-block;font-size:9px;font-weight:500;padding:2px 5px;border-radius:3px;letter-spacing:0.6px;text-transform:uppercase;vertical-align:middle;margin-left:5px;border:1px solid;}
+  .badge-reply{color:#6a9fb5;border-color:#1e3a45;background:#0d2530;}
+  .badge-comment{color:#7a7a7a;border-color:#2a2a2a;background:#161616;}
+  .badge-short{color:#c084fc;border-color:#3b1f5e;background:#1e0f35;}
+  .badge-video{color:#6ee7b7;border-color:#1a3d30;background:#0d2019;}
+  .badge-hot{color:#ff7f50;border-color:#5c2a1a;background:#2a1008;}
+
+  /* ── Chevron ── */
+  .chevron{display:inline-block;margin-left:6px;font-size:9px;color:var(--muted);transition:transform .2s;vertical-align:middle;}
+  .open .chevron{transform:rotate(180deg);}
+
+  /* ── Detail panel ── */
+  .detail-cell{padding:0;}
+  .detail-panel{display:grid;grid-template-columns:380px 1fr;background:var(--surface2);border-top:1px solid var(--border2);overflow:hidden;max-height:0;transition:max-height .3s ease;}
+  .detail-panel.open{max-height:260px;}
+  .detail-video{background:#000;width:380px;}
+  .detail-video iframe{width:100%;height:213px;border:none;display:block;}
+  .detail-video .no-video{display:flex;align-items:center;justify-content:center;height:213px;color:#444;font-size:13px;}
+  .detail-info{padding:20px 24px;display:flex;flex-direction:column;gap:12px;overflow:hidden;}
+  .detail-comment-text{font-size:14px;line-height:1.7;color:var(--text);flex:1;overflow-y:auto;}
+  .detail-text-anchor{color:inherit;text-decoration:none;border-bottom:1px solid var(--border2);transition:border-color .15s;}
+  .detail-text-anchor:hover{border-color:var(--accent);}
+  .detail-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .detail-link{font-size:12px;color:var(--muted2);text-decoration:none;border:1px solid var(--border2);padding:5px 10px;border-radius:4px;transition:all .15s;white-space:nowrap;}
+  .detail-link:hover{border-color:var(--accent);color:var(--text);}
+  .detail-meta{font-size:11px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+
+  /* ── Empty / misc ── */
+  .empty{text-align:center;padding:60px;color:var(--muted);font-size:14px;}
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+  /* ── Stats page ── */
+  .stats-page{padding:24px 32px 24px;}
+  @media(max-width:600px){.stats-page{padding:16px;}}
+  .stats-hero{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:28px;display:flex;gap:32px;align-items:stretch;}
+  @media(max-width:1000px){.stats-hero{flex-direction:column;}}
+  .pie-col{display:flex;flex-direction:column;align-items:flex-start;gap:12px;flex-shrink:0;width:380px;}
+  .pie-tab-row{display:flex;gap:5px;flex-wrap:wrap;}
+  .pie-tab{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:3px 10px;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s;}
+  .pie-tab.active{border-color:var(--accent2);color:var(--text);background:rgba(69,123,157,.12);}
+  .pie-donut-wrap{display:flex;flex-direction:row;align-items:center;gap:20px;width:100%;}
+  .pie-legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:0;}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:11.5px;line-height:1.35;min-width:0;}
+  .legend-item span{min-width:0;word-break:break-word;}
+  .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .hero-divider{width:1px;background:var(--border);flex-shrink:0;}
+  .hero-right{flex:1;display:flex;flex-direction:column;gap:20px;justify-content:center;}
+  .hero-progress-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
+  .hero-progress-label{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;color:var(--muted);}
+  .hero-progress-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);line-height:1;}
+  .hero-progress-val span{font-size:13px;color:var(--muted2);font-family:'DM Sans',sans-serif;}
+  .hero-progress-bar{background:var(--border);border-radius:3px;height:6px;overflow:hidden;margin-bottom:4px;}
+  .hero-progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .6s ease;}
+  .hero-progress-sub{font-size:11px;color:var(--muted);}
+  .stat-pills{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media(max-width:1200px){.stat-pills{grid-template-columns:repeat(2,1fr);}}
+  .stat-pill{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:12px 14px;}
+  .stat-pill .sp-label{font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px;}
+  .stat-pill .sp-val{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--text);}
+  .stat-pill .sp-sub{font-size:10.5px;color:var(--muted2);margin-top:3px;}
+  .stats-section{margin-bottom:28px;}
+  .stats-section:last-child{margin-bottom:0;}
+  .stats-section h2{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--muted2);margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+  .stat-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+  .stat-tab{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:5px 14px;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;vertical-align:middle;line-height:1.4;display:inline-flex;align-items:center;}
+  .stat-tab:hover{color:var(--text);}
+  .stat-tab.active{border-color:var(--accent2);color:var(--text);background:rgba(69,123,157,.1);}
+  .stat-panel{display:none;}
+  .stat-panel.active{display:block;}
+  .info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);font-size:10px;color:var(--muted2);cursor:default;position:relative;flex-shrink:0;}
+  .info-icon .tooltip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--text);white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+  .info-icon:hover .tooltip{display:block;}
+  .tab-info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid var(--border2);font-size:9px;color:var(--muted);cursor:default;position:relative;margin-left:4px;vertical-align:middle;flex-shrink:0;font-style:normal;}
+  .tab-info-icon:hover{border-color:var(--accent2);color:var(--text);}
+  .tab-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--text);white-space:nowrap;z-index:300;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.6);line-height:1.5;}
+  .tab-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--border2);}
+  .tab-info-icon:hover .tab-tooltip{display:block;}
+  .ti-rank{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--muted);width:24px;flex-shrink:0;text-align:center;}
+  .ti-rank.rk-1{color:var(--gold);font-size:20px;}
+  .ti-rank.rk-2{color:var(--silver);font-size:18px;}
+  .ti-rank.rk-3{color:var(--bronze);font-size:17px;}
+  .ti-text{font-size:13px;color:var(--text);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .ti-likes{font-family:'Bebas Neue',sans-serif;font-size:18px;flex-shrink:0;}
+  .ti-sub{font-size:11px;color:var(--muted2);flex-shrink:0;white-space:nowrap;}
+  .bar-chart{display:flex;flex-direction:column;gap:0;}
+  .bar-row{display:grid;grid-template-columns:52px 1fr 52px;gap:10px;align-items:center;cursor:pointer;padding:8px 6px;transition:background .1s;border-bottom:1px solid transparent;}
+  .bar-row:hover,.bar-row-active{background:var(--surface);}
+  .bar-label{font-size:11px;color:var(--muted2);text-align:right;padding-right:4px;}
+  .bar-track{background:var(--border);border-radius:2px;height:8px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:2px;transition:width .4s ease;}
+  .bar-val{font-size:11px;color:var(--muted2);}
+  #year-detail{overflow:hidden;}
+  .year-detail-inner{max-height:0;opacity:0;transform:translateY(-6px);transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s ease,transform .25s ease;overflow:hidden;}
+  #year-detail.open .year-detail-inner{max-height:9999px;opacity:1;transform:translateY(0);}
+  .year-detail{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;}
+  .year-detail h3{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--accent2);margin-bottom:14px;}
+  .year-stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:14px;}
+  .year-stat{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:10px 12px;}
+  .year-stat .ys-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+  .year-stat .ys-val{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--text);}
+  .year-stat[data-ysort]{cursor:pointer;transition:border-color .15s,background .15s;}
+  .year-stat[data-ysort]:hover{background:var(--surface3);border-color:var(--accent2);}
+  .yd-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--border);transition:background .15s;}
+  .yd-row:hover{background:var(--surface2);}
+  .yd-text{flex:1;font-size:13px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .yd-likes{font-family:'Bebas Neue',sans-serif;font-size:18px;flex-shrink:0;}
+  .reply-tag{font-size:10px;color:var(--muted2);margin-left:6px;border:1px solid var(--border2);padding:1px 5px;border-radius:3px;}
+  @keyframes ticker-scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  .empty-box{display:flex;flex-direction:column;gap:3px;position:relative;}
+  .ghost-row{display:flex;align-items:center;gap:12px;padding:0 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;opacity:0.18;pointer-events:none;user-select:none;flex:1;}
+  .ghost-rank{width:24px;height:18px;background:var(--border2);border-radius:3px;flex-shrink:0;}
+  .ghost-text{flex:1;height:13px;background:var(--border2);border-radius:3px;}
+  .ghost-sub{width:80px;height:11px;background:var(--border2);border-radius:3px;flex-shrink:0;}
+  .ghost-val{width:40px;height:18px;background:var(--border2);border-radius:3px;flex-shrink:0;}
+  .empty-box-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .empty-box-msg span{font-size:12px;color:var(--muted2);background:var(--surface3);border:1px solid var(--border2);border-radius:20px;padding:8px 18px;backdrop-filter:blur(4px);}
+  .pie-toggle{transition:opacity .15s;cursor:pointer;}
+  .pie-toggle:hover{opacity:0.75;}
+  a.item-link{color:var(--text);text-decoration:none;}
+  .expand-btn{margin-top:8px;width:100%;background:transparent;border:1px solid var(--border2);color:var(--muted);padding:7px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:0.5px;transition:all .15s;}
+  .expand-btn:hover{border-color:var(--accent2);color:var(--text);}
+  .top-list-wrap{display:flex;flex-direction:column;gap:3px;}
+  .top-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;transition:background .1s;cursor:pointer;user-select:none;}
+  .top-item.ti-open{border-radius:6px 6px 0 0;}
+  .top-item:hover{background:var(--surface2);}
+  .ti-chevron{font-size:9px;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+  .top-item.ti-open .ti-chevron{transform:rotate(180deg);}
+  .ti-detail{background:var(--surface2);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;padding:0 16px;display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;max-height:0;overflow:hidden;opacity:0;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s ease,padding .3s ease;}
+  .ti-detail.open{max-height:300px;opacity:1;padding:12px 16px;}
+  .ti-detail-field{display:flex;flex-direction:column;gap:2px;min-width:80px;}
+  .ti-detail-label{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .ti-detail-val{font-size:12px;color:var(--text);}
+  .ti-detail-val a{color:var(--accent2);text-decoration:none;}
+  .ti-detail-val a:hover{text-decoration:underline;}
+  .ti-detail-comment{flex:1;min-width:200px;font-size:12px;color:var(--muted2);line-height:1.5;border-left:2px solid var(--border2);padding-left:12px;}
+  .ticker-wrap{background:var(--surface2);border-bottom:1px solid var(--border);height:36px;overflow:hidden;position:relative;}
+  .ticker-track{display:flex;align-items:center;height:100%;white-space:nowrap;will-change:transform;}
+  .ticker-track.paused{animation-play-state:paused;}
+  .ticker-item{display:inline-flex;align-items:center;gap:4px;padding:0 0;font-size:12px;color:var(--muted2);flex-shrink:0;text-decoration:none;transition:color .15s;cursor:pointer;}
+  a.ticker-item:hover{color:var(--text);}
+  .ticker-meta{display:inline-block;text-align:center;flex-shrink:0;line-height:1.1;margin-left:6px;}
+  .ticker-item .ticker-likes{display:block;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--accent);white-space:nowrap;padding-right:2ch;}
+  .ticker-item .ticker-heart{margin-right:0.4ch;font-size:13px;font-family:'Bebas Neue',sans-serif;}
+  .ticker-item .ticker-year{display:block;font-size:10px;color:#6b6560;font-family:'DM Sans',sans-serif;text-align:center;}
+  .ticker-dot{color:var(--muted);opacity:0.35;padding:0 7px;flex-shrink:0;font-size:16px;}
+
+  /* ── How To page ── */
+  .howto-page{max-width:860px;margin:0 auto;}
+  .howto-hero{display:flex;align-items:center;gap:16px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .howto-steps{display:flex;flex-direction:column;gap:16px;}
+  .howto-card{display:flex;gap:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;}
+  .howto-card-flat{background:var(--surface2);}
+  .howto-step-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent);line-height:1;width:32px;flex-shrink:0;padding-top:2px;}
+  .howto-card-body{flex:1;min-width:0;}
+  .howto-card-body h3{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:10px;}
+  .howto-card-body p{font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:12px;}
+  .howto-list{padding-left:18px;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .howto-list li{font-size:13px;color:var(--muted2);line-height:1.65;}
+  .howto-list li strong{color:var(--text);}
+  .howto-list a{color:var(--accent2);text-decoration:none;}
+  .howto-list a:hover{text-decoration:underline;}
+  .howto-tip{background:rgba(69,123,157,.1);border:1px solid rgba(69,123,157,.25);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--muted2);line-height:1.6;margin-top:12px;}
+  .howto-tip-label{font-weight:500;color:var(--accent2);margin-right:6px;}
+  .howto-substeps{display:flex;flex-direction:column;gap:18px;margin-top:14px;}
+  .howto-substep{display:flex;flex-direction:column;gap:8px;}
+  .howto-substep-label{font-size:13px;color:var(--muted2);line-height:1.5;}
+  .howto-substep-label strong{color:var(--text);}
+  .howto-substep-label a{color:var(--accent2);text-decoration:none;}
+  .howto-substep-label a:hover{text-decoration:underline;}
+  .howto-diagram{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;overflow:hidden;}
+
+  /* error banner */
+  .err-banner{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);border-radius:6px;padding:10px 14px;font-size:12px;color:#ff8a8a;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<!-- ── Landing / sign-in screen ── -->
+<div id="landing">
+  <div class="landing-logo">
+    <div class="yt-icon">YT</div>
+    <h1>Top Comments</h1>
+  </div>
+
+  <div class="landing-card">
+    <h2>Sign In With Google</h2>
+    <p>The app needs access to your YouTube account to fetch live like counts for your comments.</p>
+    <button class="btn-google" id="btn-signin" onclick="startOAuth()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="auth-error" class="err-banner" style="display:none;"></div>
+
+    <div class="landing-divider">then</div>
+
+    <div>
+      <p style="margin-bottom:12px;">Drop your YouTube Takeout CSV files here:</p>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="csv-input" multiple accept=".csv" onchange="onFilesSelected(this.files)">
+        <div class="dz-icon">📂</div>
+        <div class="dz-title">Drop CSV files here or click to browse</div>
+        <div class="dz-sub">From Google Takeout → YouTube → my-comments</div>
+      </div>
+      <div class="file-list" id="file-list"></div>
+    </div>
+
+    <button class="btn-primary" id="btn-load" disabled onclick="startLoading()">Load My Comments</button>
+    <div id="load-error" class="err-banner" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ── Progress screen ── -->
+<div id="progress-screen">
+  <div class="progress-title">Loading Your Comments</div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill"></div></div>
+  <div class="progress-msg" id="progress-msg">Parsing CSV files...</div>
+  <div class="progress-detail" id="progress-detail"></div>
+</div>
+
+<!-- ── Main app ── -->
+<div id="app">
+  <header>
+    <div class="yt-icon">YT</div>
+    <h1>Top Comments</h1>
+    <nav class="tabs">
+      <button class="tab active" id="tab-comments" onclick="showTab('comments')">Comments</button>
+      <button class="tab" id="tab-stats" onclick="showTab('stats')">Stats</button>
+      <button class="tab" id="tab-howto" onclick="showTab('howto')">How To</button>
+    </nav>
+    <div class="header-right">
+      <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
+      <span class="header-version">v0.0.43</span>
+    </div>
+  </header>
+
+  <div class="ticker-wrap" id="ticker-wrap">
+    <div class="ticker-track" id="ticker-track"></div>
+  </div>
+
+  <div class="controls" id="controls-bar">
+    <div class="search-wrap">
+      <input type="text" id="search" placeholder="Search comments...">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear">✕</button>
+    </div>
+    <div class="sort-wrap">
+      <select id="sort" onchange="render()">
+        <option value="likes">Sort by likes</option>
+        <option value="heat">Heating up</option>
+        <option value="date_new">Newest first</option>
+        <option value="date_old">Oldest first</option>
+      </select>
+    </div>
+    <div class="divider"></div>
+    <button class="filter-btn" id="btn-replies" onclick="toggleFilter('replies')">Replies</button>
+    <button class="filter-btn" id="btn-shorts"  onclick="toggleFilter('shorts')">Shorts</button>
+    <button class="filter-btn" id="btn-videos"  onclick="toggleFilter('videos')">Videos</button>
+    <span class="result-count" id="result-count"></span>
+  </div>
+
+  <div id="page-comments">
+    <div class="comments-list">
+      <table>
+        <thead><tr>
+          <th class="th-rank sortable" id="th-rank" onclick="sortByCol('rank')">#<span class="sort-ind"></span></th>
+          <th class="sortable" id="th-comment" onclick="sortByCol('comment')">Comment<span class="sort-ind"></span></th>
+          <th class="th-date sortable" id="th-date" onclick="sortByCol('date')">Date<span class="sort-ind"></span></th>
+          <th class="th-likes sortable" id="th-likes" onclick="sortByCol('likes')">Likes<span class="sort-ind"></span></th>
+        </tr></thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="page-stats" style="display:none;">
+    <div class="stats-page" id="stats-content"></div>
+  </div>
+
+  <div id="page-howto" style="display:none;">
+    <div class="stats-page howto-page">
+      <div class="howto-hero">
+        <div class="yt-icon" style="font-size:16px;padding:5px 10px;">YT</div>
+        <div>
+          <h2 style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;margin-bottom:4px;">How To Use This App</h2>
+          <p style="font-size:13px;color:var(--muted2);">Two steps — sign in and drop your CSVs. That's it.</p>
+        </div>
+      </div>
+      <div class="howto-steps">
+        <div class="howto-card">
+          <div class="howto-step-num">1</div>
+          <div class="howto-card-body">
+            <h3>Download Your YouTube Comment History</h3>
+            <p>Google Takeout exports every comment you've ever made. Follow these steps:</p>
+            <div class="howto-substeps">
+              <div class="howto-substep">
+                <div class="howto-substep-label">Go to <a href="https://takeout.google.com" target="_blank">takeout.google.com</a> and click <strong>Deselect all</strong></div>
+                <div class="howto-diagram">
+                  <svg viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;">
+                    <rect width="560" height="110" rx="8" fill="#161616" stroke="#2a2a2a" stroke-width="1"/>
+                    <rect x="0" y="0" width="560" height="28" rx="8" fill="#1e1e1e"/>
+                    <rect x="0" y="14" width="560" height="14" fill="#1e1e1e"/>
+                    <circle cx="16" cy="14" r="4" fill="#e63946" opacity=".7"/>
+                    <circle cx="30" cy="14" r="4" fill="#f4a526" opacity=".7"/>
+                    <circle cx="44" cy="14" r="4" fill="#2a9d8f" opacity=".7"/>
+                    <rect x="60" y="7" width="280" height="14" rx="4" fill="#111" stroke="#2a2a2a" stroke-width="1"/>
+                    <text x="200" y="18" font-size="9" fill="#666" font-family="monospace">takeout.google.com</text>
+                    <text x="20" y="50" font-size="11" fill="#f0f0f0" font-family="sans-serif" font-weight="bold">Google Takeout</text>
+                    <text x="20" y="66" font-size="10" fill="#888" font-family="sans-serif">Select data to include in your export</text>
+                    <rect x="20" y="76" width="84" height="22" rx="4" fill="#e63946" opacity=".15" stroke="#e63946" stroke-width="1.5"/>
+                    <text x="62" y="91" font-size="10" fill="#e63946" font-family="sans-serif" text-anchor="middle" font-weight="bold">Deselect all</text>
+                    <text x="114" y="91" font-size="14" fill="#e63946">←</text>
+                    <text x="132" y="91" font-size="10" fill="#e63946" font-family="sans-serif">click this first</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="howto-substep">
+                <div class="howto-substep-label">Scroll down, find <strong>YouTube and YouTube Music</strong>, and check it</div>
+                <div class="howto-diagram">
+                  <svg viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;">
+                    <rect width="560" height="120" rx="8" fill="#161616" stroke="#2a2a2a" stroke-width="1"/>
+                    <rect x="16" y="12" width="340" height="28" rx="4" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
+                    <rect x="28" y="22" width="12" height="12" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+                    <text x="48" y="31" font-size="10" fill="#555" font-family="sans-serif">Google Photos</text>
+                    <rect x="16" y="46" width="340" height="28" rx="4" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
+                    <rect x="28" y="56" width="12" height="12" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+                    <text x="48" y="65" font-size="10" fill="#555" font-family="sans-serif">Google Drive</text>
+                    <rect x="16" y="80" width="340" height="28" rx="4" fill="#1a2a1a" stroke="#2a9d8f" stroke-width="1.5"/>
+                    <rect x="28" y="90" width="12" height="12" rx="2" fill="#2a9d8f" stroke="#2a9d8f" stroke-width="1"/>
+                    <text x="34" y="99" font-size="9" fill="#fff" font-family="sans-serif" font-weight="bold">✓</text>
+                    <text x="48" y="99" font-size="10" fill="#f0f0f0" font-family="sans-serif" font-weight="bold">YouTube and YouTube Music</text>
+                    <text x="364" y="99" font-size="14" fill="#2a9d8f">←</text>
+                    <text x="382" y="99" font-size="10" fill="#2a9d8f" font-family="sans-serif">check only this</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="howto-substep">
+                <div class="howto-substep-label">Click <strong>All YouTube data included</strong>, uncheck everything <em>except</em> <strong>my-comments</strong>, click OK</div>
+                <div class="howto-diagram">
+                  <svg viewBox="0 0 560 148" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;">
+                    <rect width="560" height="148" rx="8" fill="#161616" stroke="#2a2a2a" stroke-width="1"/>
+                    <rect x="16" y="12" width="180" height="24" rx="4" fill="#1e1e1e" stroke="#457b9d" stroke-width="1"/>
+                    <text x="106" y="28" font-size="10" fill="#457b9d" font-family="sans-serif" text-anchor="middle">All YouTube data included ▾</text>
+                    <text x="204" y="28" font-size="14" fill="#457b9d">←</text>
+                    <text x="222" y="28" font-size="10" fill="#457b9d" font-family="sans-serif">click this</text>
+                    <rect x="16" y="42" width="300" height="96" rx="6" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1"/>
+                    <text x="28" y="60" font-size="10" fill="#888" font-family="sans-serif">Choose which YouTube data to include:</text>
+                    <rect x="28" y="68" width="10" height="10" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+                    <text x="44" y="77" font-size="10" fill="#555" font-family="sans-serif">history</text>
+                    <rect x="28" y="84" width="10" height="10" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+                    <text x="44" y="93" font-size="10" fill="#555" font-family="sans-serif">playlists</text>
+                    <rect x="28" y="100" width="10" height="10" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+                    <text x="44" y="109" font-size="10" fill="#555" font-family="sans-serif">subscriptions</text>
+                    <rect x="24" y="116" width="200" height="16" rx="3" fill="#1a2a1a" stroke="#2a9d8f" stroke-width="1"/>
+                    <rect x="28" y="119" width="10" height="10" rx="2" fill="#2a9d8f"/>
+                    <text x="34" y="127" font-size="8" fill="#fff" font-family="sans-serif" font-weight="bold">✓</text>
+                    <text x="44" y="128" font-size="10" fill="#f0f0f0" font-family="sans-serif" font-weight="bold">my-comments</text>
+                    <text x="230" y="128" font-size="10" fill="#2a9d8f" font-family="sans-serif">← keep only this checked</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="howto-substep">
+                <div class="howto-substep-label">Click <strong>Next step</strong> then <strong>Create export</strong>. Google emails you a link — download and unzip it</div>
+                <div class="howto-diagram">
+                  <svg viewBox="0 0 560 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;">
+                    <rect width="560" height="100" rx="8" fill="#161616" stroke="#2a2a2a" stroke-width="1"/>
+                    <rect x="16" y="30" width="100" height="36" rx="5" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1"/>
+                    <text x="66" y="50" font-size="9" fill="#888" text-anchor="middle" font-family="sans-serif">Click</text>
+                    <text x="66" y="62" font-size="10" fill="#f0f0f0" text-anchor="middle" font-family="sans-serif" font-weight="bold">Next step</text>
+                    <text x="120" y="51" font-size="16" fill="#444">→</text>
+                    <rect x="136" y="30" width="110" height="36" rx="5" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1"/>
+                    <text x="191" y="50" font-size="9" fill="#888" text-anchor="middle" font-family="sans-serif">Click</text>
+                    <text x="191" y="62" font-size="10" fill="#f0f0f0" text-anchor="middle" font-family="sans-serif" font-weight="bold">Create export</text>
+                    <text x="250" y="51" font-size="16" fill="#444">→</text>
+                    <rect x="266" y="30" width="110" height="36" rx="5" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1"/>
+                    <text x="321" y="50" font-size="9" fill="#888" text-anchor="middle" font-family="sans-serif">Email arrives</text>
+                    <text x="321" y="62" font-size="10" fill="#f0f0f0" text-anchor="middle" font-family="sans-serif" font-weight="bold">Download .zip</text>
+                    <text x="380" y="51" font-size="16" fill="#444">→</text>
+                    <rect x="396" y="30" width="148" height="36" rx="5" fill="#1a2a1a" stroke="#2a9d8f" stroke-width="1"/>
+                    <text x="470" y="50" font-size="9" fill="#888" text-anchor="middle" font-family="sans-serif">Extract zip →</text>
+                    <text x="470" y="62" font-size="10" fill="#2a9d8f" text-anchor="middle" font-family="sans-serif" font-weight="bold">my-comments folder</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="howto-substep">
+                <div class="howto-substep-label">You'll find CSV files named <code>comments.csv</code>, <code>comments(1).csv</code>, etc. inside the <code>my-comments</code> folder</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="howto-card howto-card-flat">
+          <div class="howto-step-num">2</div>
+          <div class="howto-card-body">
+            <h3>Sign In and Drop Your CSVs</h3>
+            <p>Come back to this page, click <strong>Sign in with Google</strong>, approve access, then drag and drop all your CSV files onto the upload area. The app does the rest automatically.</p>
+            <div class="howto-tip">
+              <span class="howto-tip-label">💡 First run only</span>
+              The Google sign-in lets the app fetch live like counts for your comments. It only needs to happen once — your session is saved until you close the browser tab.
+            </div>
+            <div class="howto-tip" style="margin-top:10px;border-color:rgba(244,165,38,.25);background:rgba(244,165,38,.07);">
+              <span class="howto-tip-label" style="color:var(--gold);">🔄 Got new comments?</span>
+              Download a fresh Takeout export, come back to this page, and drop the new CSVs. Use <strong>↻ Refresh likes</strong> in the top right to update like counts without re-uploading.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+// YOUR Google OAuth Web App client_id goes here:
+const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
+const SCOPES    = 'https://www.googleapis.com/auth/youtube.readonly';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let accessToken  = null;
+let csvFiles     = [];
+let ALL_COMMENTS = [];
+let activeFilters = new Set(), filtered = [], renderedCount = 0, openIdx = null;
+const PAGE_FIRST = 25, PAGE = 50;
+let statsBuilt   = false;
+let colSort      = {col:'likes', dir:-1};
+
+// ── OAuth (implicit flow — no backend needed) ─────────────────────────────────
+function startOAuth() {
+  if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
+    document.getElementById('auth-error').style.display = 'block';
+    document.getElementById('auth-error').textContent = 'Client ID not configured. See the README or How To tab.';
+    return;
+  }
+  const params = new URLSearchParams({
+    client_id:     CLIENT_ID,
+    redirect_uri:  window.location.origin + window.location.pathname,
+    response_type: 'token',
+    scope:         SCOPES,
+    prompt:        'select_account',
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+// Handle OAuth redirect — token comes back as URL hash
+function handleOAuthReturn() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return;
+  const params = new URLSearchParams(hash);
+  const token  = params.get('access_token');
+  if (token) {
+    accessToken = token;
+    // Clean up the URL
+    history.replaceState(null, '', window.location.pathname);
+    document.getElementById('btn-signin').textContent = '✓ Signed in';
+    document.getElementById('btn-signin').style.background = '#e8f5e9';
+    document.getElementById('btn-signin').style.color = '#2e7d32';
+    updateLoadButton();
+  }
+  const err = params.get('error');
+  if (err) {
+    const el = document.getElementById('auth-error');
+    el.style.display = 'block';
+    el.textContent = 'Sign-in failed: ' + err;
+  }
+}
+
+// ── File handling ─────────────────────────────────────────────────────────────
+function onFilesSelected(files) {
+  csvFiles = Array.from(files).filter(f => f.name.endsWith('.csv'));
+  const zone = document.getElementById('drop-zone');
+  const list = document.getElementById('file-list');
+  if (csvFiles.length) {
+    zone.classList.add('has-files');
+    list.innerHTML = csvFiles.map(f =>
+      `<div class="file-chip"><span class="fc-name">${esc(f.name)}</span><span style="color:var(--muted);flex-shrink:0">${(f.size/1024).toFixed(0)} KB</span></div>`
+    ).join('');
+  } else {
+    zone.classList.remove('has-files');
+    list.innerHTML = '';
+  }
+  updateLoadButton();
+}
+
+// Drag and drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files);
+  const input = document.getElementById('csv-input');
+  // Update file input display
+  onFilesSelected(files);
+  csvFiles = files.filter(f => f.name.endsWith('.csv'));
+});
+
+function updateLoadButton() {
+  const btn = document.getElementById('btn-load');
+  btn.disabled = !(accessToken && csvFiles.length > 0);
+}
+
+// ── CSV parsing ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split(/\r?\n/);
+  if (!lines.length) return rows;
+  // Parse header
+  const header = parseCSVLine(lines[0]);
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = parseCSVLine(lines[i]);
+    const row = {};
+    header.forEach((h, idx) => row[h.trim()] = (vals[idx] || '').trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuote && line[i+1] === '"') { cur += '"'; i++; }
+      else inQuote = !inQuote;
+    } else if (ch === ',' && !inQuote) {
+      result.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseCommentText(raw) {
+  // Handle JSON-wrapped text like {"text":"..."}
+  try {
+    const texts = [];
+    const re = /"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+    let m;
+    while ((m = re.exec(raw)) !== null) texts.push(m[1]);
+    if (texts.length) return texts.join('').replace(/\\"/g, '"').replace(/\\n/g, ' ');
+  } catch(e) {}
+  return raw;
+}
+
+async function loadCSVFiles(files) {
+  const allRows = {};
+  for (const file of files) {
+    const text = await file.text();
+    const rows = parseCSV(text);
+    for (const row of rows) {
+      const cid = (row['Comment ID'] || '').trim();
+      if (!cid) continue;
+      const videoId   = (row['Video ID'] || '').trim();
+      const timestamp = (row['Comment Create Timestamp'] || '').trim();
+      const parentId  = (row['Parent Comment ID'] || '').trim();
+      const topLevel  = (row['Top-Level Comment ID'] || '').trim();
+      allRows[cid] = {
+        comment_id:   cid,
+        video_id:     videoId,
+        video_title:  '',
+        text:         parseCommentText((row['Comment Text'] || '').trim()),
+        published_at: timestamp ? timestamp.slice(0, 10) : '',
+        is_reply:     !!parentId,
+        is_short:     false,
+        likes:        0,
+        reply_count:  0,
+        top_level_id: topLevel || cid,
+        heat_score:   0,
+        traction_score: 0,
+        prev_likes:   null,
+        prev_refresh_date: null,
+      };
+    }
+  }
+  // Count replies
+  for (const [cid, row] of Object.entries(allRows)) {
+    if (row.is_reply && row.top_level_id && allRows[row.top_level_id]) {
+      allRows[row.top_level_id].reply_count++;
+    }
+  }
+  return Object.values(allRows);
+}
+
+// ── YouTube API calls ─────────────────────────────────────────────────────────
+async function ytFetch(endpoint, params) {
+  const url = new URL('https://www.googleapis.com/youtube/v3/' + endpoint);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  url.searchParams.set('access_token', accessToken);
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${resp.status}`);
+  }
+  return resp.json();
+}
+
+async function fetchLikeCounts(comments, onProgress) {
+  const ids = comments.map(c => c.comment_id);
+  const likeMap = {};
+  const total = Math.ceil(ids.length / 50);
+  for (let i = 0; i < ids.length; i += 50) {
+    const batch = ids.slice(i, i + 50);
+    onProgress(`Fetching likes: batch ${Math.floor(i/50)+1}/${total}`, (i/ids.length)*60);
+    try {
+      const data = await ytFetch('comments', {
+        part: 'snippet', id: batch.join(','), textFormat: 'plainText', maxResults: 50
+      });
+      for (const item of (data.items || [])) {
+        likeMap[item.id] = item.snippet?.likeCount || 0;
+      }
+    } catch(e) {
+      console.warn('Like fetch warning:', e.message);
+    }
+  }
+  return likeMap;
+}
+
+async function fetchVideoInfo(comments, onProgress) {
+  const uniqueIds = [...new Set(comments.map(c => c.video_id).filter(Boolean))];
+  const shorts = new Set(), titles = {};
+  const total = Math.ceil(uniqueIds.length / 50);
+  const durRe = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+  for (let i = 0; i < uniqueIds.length; i += 50) {
+    const batch = uniqueIds.slice(i, i + 50);
+    onProgress(`Fetching video info: batch ${Math.floor(i/50)+1}/${total}`, 60 + (i/uniqueIds.length)*35);
+    try {
+      const data = await ytFetch('videos', {
+        part: 'contentDetails,snippet', id: batch.join(','), maxResults: 50
+      });
+      for (const item of (data.items || [])) {
+        titles[item.id] = item.snippet?.title || '';
+        const m = durRe.exec(item.contentDetails?.duration || '');
+        if (m) {
+          const h = parseInt(m[1]||0), mn = parseInt(m[2]||0), s = parseInt(m[3]||0);
+          if (h*3600 + mn*60 + s <= 60) shorts.add(item.id);
+        }
+      }
+    } catch(e) {
+      console.warn('Video info warning:', e.message);
+    }
+  }
+  return { shorts, titles };
+}
+
+function computeScores(comments) {
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0,10);
+  const cutoff18mo = new Date(today - 548*24*3600*1000).toISOString().slice(0,10);
+  const cutoff2yr  = new Date(today - 730*24*3600*1000).toISOString().slice(0,10);
+  for (const c of comments) {
+    // Heat score
+    if (c.published_at >= cutoff18mo && c.likes > 0) {
+      const daysOld = Math.max(1, Math.round((today - new Date(c.published_at)) / (24*3600*1000)));
+      c.heat_score = Math.round(c.likes / Math.sqrt(daysOld) * 100) / 100;
+    } else {
+      c.heat_score = 0;
+    }
+    // Traction score (requires prev_likes)
+    if (c.published_at && c.published_at <= cutoff2yr && c.likes > 0 && c.prev_likes !== null) {
+      c.traction_score = Math.max(0, c.likes - c.prev_likes);
+    } else {
+      c.traction_score = 0;
+    }
+  }
+}
+
+// ── Local cache (localStorage) ────────────────────────────────────────────────
+function saveCache(comments) {
+  try {
+    localStorage.setItem('ytcomments_cache', JSON.stringify({ ts: Date.now(), comments }));
+  } catch(e) { /* storage full — ignore */ }
+}
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem('ytcomments_cache');
+    if (!raw) return null;
+    const { comments } = JSON.parse(raw);
+    for (const c of comments) {
+      c.heat_score     = c.heat_score     ?? 0;
+      c.traction_score = c.traction_score ?? 0;
+      c.reply_count    = c.reply_count    ?? 0;
+      c.prev_likes     = c.prev_likes     ?? null;
+      c.video_title    = c.video_title    ?? '';
+    }
+    return comments;
+  } catch(e) { return null; }
+}
+
+// ── Main load flow ────────────────────────────────────────────────────────────
+function setProgress(msg, pct, detail='') {
+  document.getElementById('progress-msg').textContent = msg;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-detail').textContent = detail;
+}
+
+async function startLoading() {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('progress-screen').style.display = 'flex';
+  document.getElementById('load-error').style.display = 'none';
+
+  try {
+    setProgress('Parsing CSV files...', 5);
+    const comments = await loadCSVFiles(csvFiles);
+    if (!comments.length) throw new Error('No comments found in the CSV files.');
+    setProgress(`Loaded ${comments.length.toLocaleString()} comments`, 10, `${csvFiles.length} file(s)`);
+
+    // Snapshot prev likes from cache before refreshing
+    const cached = loadCache();
+    if (cached) {
+      const snapshot = Object.fromEntries(cached.map(c => [c.comment_id, c.likes]));
+      for (const c of comments) {
+        if (snapshot[c.comment_id] !== undefined) {
+          c.prev_likes = snapshot[c.comment_id];
+        }
+      }
+    }
+
+    const likeMap = await fetchLikeCounts(comments, setProgress);
+    for (const c of comments) c.likes = likeMap[c.comment_id] ?? 0;
+
+    const { shorts, titles } = await fetchVideoInfo(comments, setProgress);
+    for (const c of comments) {
+      c.is_short    = shorts.has(c.video_id);
+      c.video_title = titles[c.video_id] || '';
+    }
+
+    setProgress('Computing scores...', 97);
+    computeScores(comments);
+    saveCache(comments);
+
+    setProgress('Done!', 100);
+    await new Promise(r => setTimeout(r, 400));
+
+    launchApp(comments);
+  } catch(e) {
+    document.getElementById('progress-screen').style.display = 'none';
+    document.getElementById('landing').style.display = 'flex';
+    const el = document.getElementById('load-error');
+    el.style.display = 'block';
+    el.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function doRefresh() {
+  if (!accessToken) { alert('Please sign in first to refresh likes.'); return; }
+  // snapshot current likes
+  const snapshot = Object.fromEntries(ALL_COMMENTS.map(c => [c.comment_id, c.likes]));
+  for (const c of ALL_COMMENTS) c.prev_likes = snapshot[c.comment_id];
+
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('progress-screen').style.display = 'flex';
+  try {
+    const likeMap = await fetchLikeCounts(ALL_COMMENTS, setProgress);
+    for (const c of ALL_COMMENTS) c.likes = likeMap[c.comment_id] ?? c.likes;
+    const { shorts, titles } = await fetchVideoInfo(ALL_COMMENTS, setProgress);
+    for (const c of ALL_COMMENTS) {
+      c.is_short    = shorts.has(c.video_id);
+      c.video_title = titles[c.video_id] || c.video_title;
+    }
+    computeScores(ALL_COMMENTS);
+    saveCache(ALL_COMMENTS);
+    setProgress('Done!', 100);
+    await new Promise(r => setTimeout(r, 300));
+  } catch(e) {
+    alert('Refresh error: ' + e.message);
+  }
+  document.getElementById('progress-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  statsBuilt = false;
+  render();
+}
+
+function launchApp(comments) {
+  ALL_COMMENTS = comments;
+  document.getElementById('progress-screen').style.display = 'none';
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initApp();
+}
+
+// ── App init ──────────────────────────────────────────────────────────────────
+function initApp() {
+  statsBuilt = false;
+  initTicker();
+  requestAnimationFrame(() => render());
+
+  const sentinel = document.createElement('div');
+  sentinel.style.cssText = 'height:1px;width:100%;pointer-events:none;';
+  document.querySelector('.comments-list').appendChild(sentinel);
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) renderMore();
+  }, {rootMargin:'600px'}).observe(sentinel);
+
+  document.getElementById('search').addEventListener('input', () => {
+    clearTimeout(window._searchTimer);
+    document.getElementById('search-clear').classList.toggle('visible', document.getElementById('search').value.length > 0);
+    window._searchTimer = setTimeout(render, 200);
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function rankClass(i) { return i===0?'rk-1':i===1?'rk-2':i===2?'rk-3':''; }
+function rankColor(i) { return i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--accent)'; }
+function likeClass(likes, max) {
+  if (likes===max) return 'lv-gold';
+  const p = likes/max;
+  if (p>0.5) return 'lv-silver';
+  if (p>0.2) return 'lv-bronze';
+  if (p>0.05) return 'lv-high';
+  if (p>0.01) return 'lv-mid';
+  return likes>0?'lv-low':'';
+}
+function maxLikes() { return Math.max(...ALL_COMMENTS.map(c=>c.likes), 0); }
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function showTab(tab) {
+  ['comments','stats','howto'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    const pg = document.getElementById('page-'+t);
+    if (pg) pg.style.display = t===tab ? '' : 'none';
+  });
+  const cb = document.getElementById('controls-bar');
+  cb.style.cssText = tab==='comments' ? '' : 'position:absolute;visibility:hidden;pointer-events:none;';
+  if (tab==='stats' && !statsBuilt) { buildStats(); statsBuilt=true; }
+}
+
+// ── Comments tab ──────────────────────────────────────────────────────────────
+function toggleFilter(f) {
+  if (activeFilters.has(f)) activeFilters.delete(f);
+  else activeFilters.add(f);
+  document.getElementById('btn-'+f).classList.toggle('active', activeFilters.has(f));
+  render();
+}
+
+function buildRow(c, i) {
+  const text = esc(c.text);
+  const rk   = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+  const lc   = likeClass(c.likes, maxLikes());
+  const typeBadge  = c.is_reply ? '<span class="badge badge-reply">Reply</span>' : '<span class="badge badge-comment">Comment</span>';
+  const mediaBadge = c.is_short ? '<span class="badge badge-short">Short</span>' : (c.video_id ? '<span class="badge badge-video">Video</span>' : '');
+  const hotBadge   = c.heat_score > 50 ? '<span class="badge badge-hot">🔥 Hot</span>' : '';
+  const videoBlock = c.video_id
+    ? `<div class="detail-video"><iframe data-src="https://www.youtube.com/embed/${c.video_id}" allowfullscreen></iframe></div>`
+    : `<div class="detail-video"><div class="no-video">No video</div></div>`;
+  let actionLinks = '';
+  if (c.video_id) {
+    const watchUrl   = `https://www.youtube.com/watch?v=${c.video_id}`;
+    const shortsUrl  = `https://www.youtube.com/shorts/${c.video_id}`;
+    const commentUrl = c.comment_id ? watchUrl + '&lc=' + c.comment_id : watchUrl;
+    actionLinks = c.is_short
+      ? `<a class="detail-link" href="${shortsUrl}" target="_blank">Watch Short ↗</a>`
+      : `<a class="detail-link" href="${commentUrl}" target="_blank">Jump to comment ↗</a><a class="detail-link" href="${watchUrl}" target="_blank">Watch video ↗</a>`;
+  }
+  const commentLink = c.video_id
+    ? `<a href="${c.is_short ? `https://www.youtube.com/shorts/${c.video_id}` : (c.comment_id ? `https://www.youtube.com/watch?v=${c.video_id}&lc=${c.comment_id}` : `https://www.youtube.com/watch?v=${c.video_id}`)}" target="_blank" class="detail-text-anchor">${text}</a>`
+    : text;
+  return `
+    <tr class="row-main" data-idx="${i}" onclick="toggle(${i})">
+      <td class="td-rank ${rk}">${i+1}</td>
+      <td class="td-text">${text}${typeBadge}${mediaBadge}${hotBadge}<span class="chevron">▼</span></td>
+      <td class="td-date">${c.published_at}</td>
+      <td class="td-likes"><span class="likes-val ${lc}">${c.likes.toLocaleString()}</span></td>
+    </tr>
+    <tr class="row-detail"><td colspan="4" class="detail-cell">
+      <div class="detail-panel" data-idx="${i}">
+        ${videoBlock}
+        <div class="detail-info">
+          <div class="detail-comment-text">${commentLink}</div>
+          <div class="detail-meta"><span>${c.published_at}</span><span>${c.likes.toLocaleString()} likes</span>${typeBadge}${mediaBadge}</div>
+          <div class="detail-actions">${actionLinks}</div>
+        </div>
+      </div>
+    </td></tr>`;
+}
+
+function renderMore() {
+  if (renderedCount >= filtered.length) return;
+  const end = Math.min(renderedCount + (renderedCount===0?PAGE_FIRST:PAGE), filtered.length);
+  const tmp = document.createElement('tbody');
+  tmp.innerHTML = filtered.slice(renderedCount, end).map((c,j) => buildRow(c, renderedCount+j)).join('');
+  const frag = document.createDocumentFragment();
+  while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+  document.getElementById('list').appendChild(frag);
+  renderedCount = end;
+}
+
+function toggle(idx) {
+  openIdx = openIdx===idx ? null : idx;
+  document.querySelectorAll('tr.row-main').forEach(tr =>
+    tr.classList.toggle('open', parseInt(tr.dataset.idx)===openIdx)
+  );
+  document.querySelectorAll('.detail-panel').forEach(panel => {
+    const i = parseInt(panel.dataset.idx);
+    panel.classList.toggle('open', i===openIdx);
+    if (i===openIdx) {
+      const iframe = panel.querySelector('iframe');
+      if (iframe && !iframe.src) iframe.src = iframe.dataset.src;
+    }
+  });
+}
+
+function clearSearch() {
+  document.getElementById('search').value = '';
+  document.getElementById('search-clear').classList.remove('visible');
+  render();
+}
+
+function render() {
+  const query      = document.getElementById('search').value.toLowerCase();
+  const sort       = document.getElementById('sort').value;
+  const wantReplies = activeFilters.has('replies');
+  const wantShorts  = activeFilters.has('shorts');
+  const wantVideos  = activeFilters.has('videos');
+  openIdx = null; renderedCount = 0;
+
+  filtered = ALL_COMMENTS.filter(c => {
+    if (wantReplies && !c.is_reply) return false;
+    if (wantShorts && !wantVideos && !c.is_short) return false;
+    if (wantVideos && !wantShorts &&  c.is_short) return false;
+    if (query && !c.text.toLowerCase().includes(query)) return false;
+    return true;
+  });
+
+  if (colSort.col==='date' && colSort.dir!==0)
+    filtered.sort((a,b) => colSort.dir * b.published_at.localeCompare(a.published_at));
+  else if (colSort.col==='comment' && colSort.dir!==0)
+    filtered.sort((a,b) => colSort.dir * b.text.localeCompare(a.text));
+  else if (colSort.col==='rank' && colSort.dir!==0)
+    filtered.sort((a,b) => colSort.dir * (a.likes-b.likes));
+  else if (sort==='likes' || colSort.col==='likes') {
+    const d = (colSort.col==='likes' && colSort.dir!==0) ? colSort.dir : -1;
+    filtered.sort((a,b) => d*(b.likes-a.likes));
+  }
+  else if (sort==='heat')     filtered.sort((a,b) => b.heat_score-a.heat_score);
+  else if (sort==='date_new') filtered.sort((a,b) => b.published_at.localeCompare(a.published_at));
+  else if (sort==='date_old') filtered.sort((a,b) => a.published_at.localeCompare(b.published_at));
+
+  document.getElementById('result-count').textContent = filtered.length.toLocaleString()+' results';
+  const list = document.getElementById('list');
+  list.replaceChildren();
+  if (!filtered.length) {
+    list.innerHTML = '<tr><td colspan="4"><div class="empty">No comments match.</div></td></tr>';
+    return;
+  }
+  renderMore();
+}
+
+function sortByCol(col) {
+  if (colSort.col===col) {
+    colSort.dir = colSort.dir===-1 ? 1 : colSort.dir===1 ? 0 : -1;
+    if (colSort.dir===0) colSort.col='likes';
+  } else {
+    colSort.col=col;
+    colSort.dir=col==='likes'?-1:col==='rank'?1:-1;
+  }
+  const sel = document.getElementById('sort');
+  if (colSort.dir===0||colSort.col==='rank') sel.value='likes';
+  else if (colSort.col==='likes') sel.value='likes';
+  else if (colSort.col==='date') sel.value=colSort.dir===-1?'date_new':'date_old';
+  ['rank','comment','date','likes'].forEach(c => {
+    const el = document.getElementById('th-'+c);
+    if (!el) return;
+    el.classList.remove('sort-asc','sort-desc');
+    if (colSort.col===c && colSort.dir!==0)
+      el.classList.add(colSort.dir===-1?'sort-desc':'sort-asc');
+  });
+  render();
+}
+
+// ── Ticker ────────────────────────────────────────────────────────────────────
+function initTicker() {
+  const track = document.getElementById('ticker-track');
+  if (!track || !ALL_COMMENTS.length) return;
+  const pool = ALL_COMMENTS.filter(c => c.likes>0 && c.text);
+  const shuffled = [...pool].sort(()=>Math.random()-.5).slice(0,80);
+  if (!shuffled.length) { document.getElementById('ticker-wrap').style.display='none'; return; }
+  function buildItems(arr) {
+    return arr.map(c => {
+      const txt = c.text.length>80 ? c.text.slice(0,80)+'…' : c.text;
+      const url = c.video_id
+        ? (c.is_short ? `https://www.youtube.com/shorts/${c.video_id}` : `https://www.youtube.com/watch?v=${c.video_id}&lc=${c.comment_id}`)
+        : '';
+      const year = c.published_at ? c.published_at.slice(0,4) : '';
+      const meta = `<span class="ticker-meta"><span class="ticker-likes"><span class="ticker-heart">♥</span>${c.likes.toLocaleString()}</span>${year?`<span class="ticker-year">${year}</span>`:''}</span>`;
+      const inner = `${esc(txt)}${meta}`;
+      return url
+        ? `<a class="ticker-item" href="${url}" target="_blank">${inner}</a><span class="ticker-dot">·</span>`
+        : `<span class="ticker-item">${inner}</span><span class="ticker-dot">·</span>`;
+    }).join('');
+  }
+  track.innerHTML = buildItems(shuffled) + buildItems(shuffled);
+  requestAnimationFrame(() => {
+    const fullW = track.scrollWidth / 2;
+    const duration = Math.max(20, fullW/120);
+    track.style.animation = `ticker-scroll ${duration}s linear infinite`;
+  });
+  const wrap = document.getElementById('ticker-wrap');
+  wrap.addEventListener('mouseenter', () => track.classList.add('paused'));
+  wrap.addEventListener('mouseleave', () => track.classList.remove('paused'));
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function makeInteractivePiePanel(tabId, allSegs, total) {
+  if (!window._pieState) window._pieState = {};
+  if (!window._pieState[tabId]) window._pieState[tabId] = new Set();
+  function renderPie() {
+    const disabled = window._pieState[tabId];
+    const active = allSegs.filter(s=>!disabled.has(s.label));
+    const activeTotal = active.reduce((s,x)=>s+x.value,0);
+    const r=90,cx=110,cy=110,stroke=38,circ=2*Math.PI*r,gapFrac=0.006;
+    let offset=0, paths='';
+    active.forEach(seg => {
+      const pct=seg.value/(activeTotal||1);
+      const dash=Math.max(0,pct*circ-gapFrac*circ);
+      paths+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${stroke}"
+        stroke-dasharray="${dash.toFixed(4)} ${(circ-dash).toFixed(4)}"
+        stroke-dashoffset="${(-offset).toFixed(4)}"
+        data-label="${seg.label}" data-value="${seg.value}" data-pct="${Math.round(seg.value/(total||1)*100)}"
+        style="cursor:pointer;transition:opacity .15s;"
+        onmouseenter="window._showPieTip(this,event)" onmouseleave="window._hidePieTip()"></circle>`;
+      offset+=pct*circ;
+    });
+    const svg=`<svg width="220" height="220" viewBox="0 0 220 220" style="flex-shrink:0;transform:rotate(-90deg)" id="pie-svg-${tabId}">${paths}</svg>`;
+    const legend=allSegs.map(s=>{
+      const isOff=disabled.has(s.label);
+      const pct=Math.round(s.value/(total||1)*100);
+      return `<div class="legend-item pie-toggle${isOff?' pie-off':''}" data-pieid="${tabId}" data-label="${s.label.replace(/"/g,'&quot;')}" style="cursor:pointer;">
+        <div class="legend-dot" style="background:${isOff?'var(--border2)':s.color};"></div>
+        <span style="flex:1;${isOff?'opacity:0.35':''}">
+          <span style="font-weight:600;color:var(--text)">${s.label}</span><br>
+          <span style="color:var(--muted2)">${s.value.toLocaleString()} &mdash; ${pct}%</span>
+        </span></div>`;
+    }).join('');
+    const pd=document.getElementById('pie-display');
+    if (!pd) return;
+    pd.innerHTML=`<div class="pie-donut-wrap">${svg}<div class="pie-legend">${legend}</div></div>`;
+    pd.querySelectorAll('.pie-toggle').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const lbl=el.dataset.label, dis=window._pieState[el.dataset.pieid];
+        if(dis.has(lbl)) dis.delete(lbl); else dis.add(lbl);
+        renderPie();
+      });
+    });
+  }
+  renderPie();
+}
+
+const _tip = document.createElement('div');
+_tip.id='pie-tip';
+_tip.style.cssText='position:fixed;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:6px;padding:7px 11px;font-size:12px;color:#f0f0f0;pointer-events:none;z-index:999;display:none;box-shadow:0 4px 14px rgba(0,0,0,.6);line-height:1.5;';
+document.body.appendChild(_tip);
+window._showPieTip=function(el,e){
+  _tip.innerHTML=`<strong style="display:block;margin-bottom:2px">${el.getAttribute('data-label')}</strong>${parseInt(el.getAttribute('data-value')).toLocaleString()} comments &mdash; ${el.getAttribute('data-pct')}%`;
+  _tip.style.display='block';
+  _tip.style.left=(e.clientX+14)+'px';
+  _tip.style.top=(e.clientY-10)+'px';
+  el.style.opacity='0.75';
+  document.addEventListener('mousemove',window._movePieTip);
+};
+window._movePieTip=function(e){_tip.style.left=(e.clientX+14)+'px';_tip.style.top=(e.clientY-10)+'px';};
+window._hidePieTip=function(){
+  _tip.style.display='none';
+  document.removeEventListener('mousemove',window._movePieTip);
+  document.querySelectorAll('[id^="pie-svg-"] circle').forEach(c=>c.style.opacity='');
+};
+
+function showStatTab(group, tab) {
+  document.querySelectorAll(`[data-stgroup="${group}"]`).forEach(el=>el.classList.toggle('active', el.dataset.sttab===tab));
+  if (group==='toplists') {
+    const tooltips={heat:'Recent comments (≤18 months) ranked by momentum. Score = likes ÷ √(days since posted).',traction:'Comments 2+ years old that gained likes since your last refresh.',vcount:'Videos you commented on the most.',vlikes:'Videos where your comments earned the most total likes.',replied:'Your top-level comments that received the most replies.',longest:'Your longest comments by character count.'};
+    const el=document.getElementById('toplist-info-tooltip');
+    if(el && tooltips[tab]) el.textContent=tooltips[tab];
+  }
+}
+
+function toggleTopItem(id) {
+  const item=document.getElementById('ti-'+id), detail=document.getElementById('tid-'+id);
+  if(!item||!detail) return;
+  const isOpen=item.classList.contains('ti-open');
+  item.classList.toggle('ti-open',!isOpen);
+  detail.classList.toggle('open',!isOpen);
+}
+
+function showYearDetail(year) {
+  const existing=document.getElementById('year-detail');
+  if(existing.dataset.year===year){
+    existing.classList.remove('open'); existing.dataset.year='';
+    document.querySelectorAll('.bar-row').forEach(r=>r.classList.remove('bar-row-active'));
+    setTimeout(()=>{existing.innerHTML='';},360); return;
+  }
+  existing.dataset.year=year;
+  document.querySelectorAll('.bar-row').forEach(r=>r.classList.toggle('bar-row-active',r.dataset.year===year));
+  const yc=ALL_COMMENTS.filter(c=>c.published_at&&c.published_at.startsWith(year));
+  if(!yc.length) return;
+  const likes=yc.map(c=>c.likes), total=yc.length, totalLk=likes.reduce((a,b)=>a+b,0);
+  const avg=(totalLk/total).toFixed(1);
+  const likedLk=likes.filter(l=>l>0).sort((a,b)=>a-b);
+  const mm=Math.floor(likedLk.length/2);
+  const medRaw=likedLk.length===0?0:likedLk.length%2?likedLk[mm]:(likedLk[mm-1]+likedLk[mm])/2;
+  const median=Number.isInteger(medRaw)?medRaw:medRaw.toFixed(1);
+  const maxLk=Math.max(...likes), replies=yc.filter(c=>c.is_reply).length, withLk=likes.filter(l=>l>0).length;
+  window._yd={sortField:'likes',sortDir:-1,page:5,showOrig:true,showRepl:true};
+  function renderYearList(){
+    const st=window._yd; let list=[...yc];
+    if(st.showOrig&&!st.showRepl) list=list.filter(c=>!c.is_reply);
+    else if(st.showRepl&&!st.showOrig) list=list.filter(c=>c.is_reply);
+    list.sort((a,b)=>{
+      if(st.sortField==='likes') return st.sortDir===-1?(b.likes-a.likes):(a.likes-b.likes);
+      if(st.sortField==='date')  return st.sortDir===-1?b.published_at.localeCompare(a.published_at):a.published_at.localeCompare(b.published_at);
+      if(st.sortField==='length') return st.sortDir===-1?(b.text.length-a.text.length):(a.text.length-b.text.length);
+      if(st.sortField==='replies') return st.sortDir===-1?((b.reply_count||0)-(a.reply_count||0)):((a.reply_count||0)-(b.reply_count||0));
+      return b.likes-a.likes;
+    });
+    const slice=list.slice(0,st.page);
+    const rows=slice.map((c,i)=>{
+      const rk=rankClass(i), url=c.video_id?`https://www.youtube.com/watch?v=${c.video_id}&lc=${c.comment_id}`:'';
+      const txt=esc(c.text.length>80?c.text.slice(0,80)+'…':c.text);
+      const replyTag=c.is_reply?`<span class="reply-tag">reply</span>`:'';
+      return `<div class="yd-row"><div class="ti-rank ${rk}">${i+1}</div><div class="yd-text">${url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt}${replyTag}</div><div class="yd-likes" style="color:${rankColor(i)}">${c.likes.toLocaleString()}</div></div>`;
+    }).join('');
+    const remaining=list.length-st.page, nextPage=st.page===5?25:st.page+50;
+    const moreBtn=remaining>0?`<button onclick="window._yd.page=${nextPage};renderYearList()" class="expand-btn">See More… (${remaining} remaining)</button>`:`<button onclick="window._yd.page=5;renderYearList()" class="expand-btn">Collapse ↑</button>`;
+    document.getElementById('yd-list').innerHTML=rows+moreBtn;
+    document.querySelectorAll('[data-ysort]').forEach(card=>{
+      const isActive=card.dataset.ysort===st.sortField;
+      card.style.borderColor=isActive?'var(--accent2)':'';
+      const arrow=card.querySelector('.sort-arrow');
+      if(arrow) arrow.textContent=isActive?(st.sortDir===-1?' ↓':' ↑'):' ↕';
+    });
+  }
+  window.ySortBy=function(field){
+    if(window._yd.sortField===field) window._yd.sortDir*=-1;
+    else{window._yd.sortField=field;window._yd.sortDir=-1;}
+    window._yd.page=5; renderYearList();
+  };
+  window.renderYearList=renderYearList;
+  existing.innerHTML=`<div class="year-detail-inner"><div class="year-detail">
+    <h3>${year} — Breakdown</h3>
+    <div class="year-stats-grid">
+      <div class="year-stat"><div class="ys-label">Comments</div><div class="ys-val">${total}</div></div>
+      <div class="year-stat"><div class="ys-label">Total Likes</div><div class="ys-val" style="color:var(--accent)">${totalLk.toLocaleString()}</div></div>
+      <div class="year-stat"><div class="ys-label">Avg Likes</div><div class="ys-val">${avg}</div></div>
+      <div class="year-stat"><div class="ys-label">Median Likes</div><div class="ys-val" style="color:var(--accent3)">${median}</div></div>
+      <div class="year-stat" data-ysort="likes" onclick="ySortBy('likes')"><div class="ys-label" style="color:var(--accent2);">Most Liked<span class="sort-arrow"> ↓</span></div><div class="ys-val" style="color:var(--gold)">${maxLk.toLocaleString()}</div></div>
+      <div class="year-stat" data-ysort="replies" onclick="ySortBy('replies')"><div class="ys-label" style="color:var(--accent2);">Replies<span class="sort-arrow"> ↕</span></div><div class="ys-val">${replies}</div></div>
+      <div class="year-stat" data-ysort="date" onclick="ySortBy('date')"><div class="ys-label" style="color:var(--accent2);">Date<span class="sort-arrow"> ↕</span></div><div class="ys-val" style="font-size:20px;">${year}</div></div>
+      <div class="year-stat" data-ysort="length" onclick="ySortBy('length')"><div class="ys-label" style="color:var(--accent2);">Length<span class="sort-arrow"> ↕</span></div><div class="ys-val">${Math.round(yc.reduce((s,c)=>s+c.text.length,0)/total)}<span style="font-size:14px;color:var(--muted2);"> avg chars</span></div></div>
+      <div class="year-stat"><div class="ys-label">Got Likes</div><div class="ys-val">${Math.round(withLk/total*100)}%</div></div>
+    </div>
+    <div id="yd-list"></div>
+  </div></div>`;
+  requestAnimationFrame(()=>{
+    existing.classList.add('open');
+    requestAnimationFrame(()=>{
+      function absTop(el){let t=0;while(el){t+=el.offsetTop;el=el.offsetParent;}return t;}
+      const sec=document.getElementById('year-bars');
+      const target=sec?.closest('.stats-section')||sec;
+      if(target) window.scrollTo({top:absTop(target)-70,behavior:'smooth'});
+    });
+  });
+  renderYearList();
+}
+
+function buildStats() {
+  const c=ALL_COMMENTS, total=c.length;
+  const totalLikes=c.reduce((s,x)=>s+x.likes,0), avgLikes=(totalLikes/total).toFixed(1);
+  const maxLk=Math.max(...c.map(x=>x.likes)), replies=c.filter(x=>x.is_reply).length;
+  const shorts=c.filter(x=>x.is_short).length, videos=total-shorts;
+  const withLikes=c.filter(x=>x.likes>0).length, hotCount=c.filter(x=>x.heat_score>50).length;
+  const likedOnly=c.filter(x=>x.likes>0).map(x=>x.likes).sort((a,b)=>a-b);
+  const mm=Math.floor(likedOnly.length/2);
+  const medRaw=likedOnly.length%2?likedOnly[mm]:(likedOnly[mm-1]+likedOnly[mm])/2;
+  const median=Number.isInteger(medRaw)?medRaw:medRaw.toFixed(1);
+  const byYear={};
+  c.forEach(x=>{const y=x.published_at?x.published_at.slice(0,4):'Unknown';if(!byYear[y])byYear[y]={count:0,likes:0};byYear[y].count++;byYear[y].likes+=x.likes;});
+  const years=Object.keys(byYear).sort(), maxYearCount=Math.max(...years.map(y=>byYear[y].count));
+  const yearColors=['#457b9d','#2a9d8f','#e9c46a','#f4a261','#e76f51','#a8b2c1','#c084fc','#6ee7b7'];
+  const byVideo={};
+  c.forEach(x=>{if(!x.video_id)return;if(!byVideo[x.video_id])byVideo[x.video_id]={count:0,likes:0,title:x.video_title||x.video_id,short:x.is_short,id:x.video_id};byVideo[x.video_id].count++;byVideo[x.video_id].likes+=x.likes;});
+  const topByCount=Object.values(byVideo).sort((a,b)=>b.count-a.count).slice(0,10);
+  const topByLikes=Object.values(byVideo).sort((a,b)=>b.likes-a.likes).slice(0,10);
+  const videoOrigCount={},videoReplyCount={};
+  c.forEach(x=>{if(!x.video_id)return;if(x.is_reply)videoReplyCount[x.video_id]=(videoReplyCount[x.video_id]||0)+1;else videoOrigCount[x.video_id]=(videoOrigCount[x.video_id]||0)+1;});
+  const mostReplied=[...c].filter(x=>!x.is_reply).sort((a,b)=>(b.reply_count||0)-(a.reply_count||0)).slice(0,10);
+  const longest=[...c].sort((a,b)=>b.text.length-a.text.length).slice(0,10);
+  const heating=[...c].filter(x=>x.heat_score>0).sort((a,b)=>b.heat_score-a.heat_score).slice(0,10);
+  const traction=[...c].filter(x=>x.traction_score>0).sort((a,b)=>b.traction_score-a.traction_score).slice(0,10);
+
+  function field(label,val){return `<div class="ti-detail-field"><div class="ti-detail-label">${label}</div><div class="ti-detail-val">${val}</div></div>`;}
+  function commentDetail(x){
+    const wu=x.video_id?(x.is_short?`https://www.youtube.com/shorts/${x.video_id}`:`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`):'';
+    const vu=x.video_id?(x.is_short?`https://www.youtube.com/shorts/${x.video_id}`:`https://www.youtube.com/watch?v=${x.video_id}`):'';
+    const typeLabel=(x.is_reply?'Reply':'Comment')+' on '+(x.is_short?'Short':'Video');
+    const vt=x.video_title?esc(x.video_title.length>50?x.video_title.slice(0,50)+'…':x.video_title):x.video_id||'—';
+    return `${field('Posted',x.published_at||'—')}${field('Type',typeLabel)}${field('Likes',x.likes.toLocaleString())}${vu?field('Video',`<a href="${vu}" target="_blank" class="item-link">${vt}</a>`):''}${wu?field('Link',`<a href="${wu}" target="_blank">Jump to comment ↗</a>`):''}
+    <div class="ti-detail-comment">${esc(x.text)}</div>`;
+  }
+  function videoDetail(d){
+    const url=d.short?`https://www.youtube.com/shorts/${d.id}`:`https://www.youtube.com/watch?v=${d.id}`;
+    return `${field('Comments',(videoOrigCount[d.id]||0).toLocaleString())}${field('Replies',(videoReplyCount[d.id]||0).toLocaleString())}${field('Total Likes',d.likes.toLocaleString())}${field('Type',d.short?'Short':'Video')}${field('Link',`<a href="${url}" target="_blank">Open video ↗</a>`)}`;
+  }
+  function makeTopItem(id,rank,textHtml,subHtml,valueHtml,detailHtml){
+    return `<div id="ti-${id}" class="top-item" onclick="toggleTopItem('${id}')"><div class="ti-rank ${rankClass(rank)}">${rank+1}</div><div class="ti-text">${textHtml}</div>${subHtml?`<div class="ti-sub">${subHtml}</div>`:''} ${valueHtml}<span class="ti-chevron">▼</span></div><div id="tid-${id}" class="ti-detail">${detailHtml}</div>`;
+  }
+  function videoItem(d,i,showBreakdown=false,pfx='v'){
+    const url=d.short?`https://www.youtube.com/shorts/${d.id}`:`https://www.youtube.com/watch?v=${d.id}`;
+    const title=esc(d.title&&d.title!==d.id?(d.title.length>55?d.title.slice(0,55)+'…':d.title):d.id);
+    const oc=videoOrigCount[d.id]||0,rc=videoReplyCount[d.id]||0;
+    const sub=showBreakdown?(oc>0&&rc>0?`${oc} comment${oc!==1?'s':''},${rc} repl${rc!==1?'ies':'y'}`:oc>0?`${oc} comment${oc!==1?'s':''}`:`${rc} repl${rc!==1?'ies':'y'}`):(`${d.count} comment${d.count!==1?'s':''}`);
+    return makeTopItem(pfx+i,i,`<a class="item-link" href="${url}" target="_blank">${title}</a>`,sub,`<div class="ti-likes" style="color:${rankColor(i)}">${d.likes.toLocaleString()}</div>`,videoDetail(d));
+  }
+  function heatItem(x,i){
+    const url=x.video_id?`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`:'';
+    const txt=esc(x.text.length>90?x.text.slice(0,90)+'…':x.text);
+    const maxH=heating.length?heating[0].heat_score:1, pct=Math.round(x.heat_score/maxH*100);
+    const hc=pct>80?'var(--accent)':pct>50?'var(--gold)':'var(--accent2)';
+    return makeTopItem('h'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.published_at} · ${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:${hc}">${x.heat_score}</div>`,commentDetail(x));
+  }
+  function tractionItem(x,i){
+    const url=x.video_id?`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`:'';
+    const txt=esc(x.text.length>90?x.text.slice(0,90)+'…':x.text);
+    const age=Math.round((new Date()-new Date(x.published_at))/(365.25*24*3600*1000)*10)/10;
+    return makeTopItem('tr'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.published_at} · ${age}yr · ${x.likes.toLocaleString()} likes`,`<div class="ti-likes" style="color:var(--accent3);white-space:nowrap;">+${x.traction_score.toLocaleString()}</div>`,commentDetail(x));
+  }
+  function repliedItem(x,i){
+    const url=x.video_id?`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`:'';
+    const txt=esc(x.text.length>90?x.text.slice(0,90)+'…':x.text), rc=x.reply_count||0;
+    return makeTopItem('r'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${rc} repl${rc!==1?'ies':'y'}`,`<div class="ti-likes" style="color:${rankColor(i)}">${x.likes.toLocaleString()}</div>`,commentDetail(x));
+  }
+  function longestItem(x,i){
+    const url=x.video_id?`https://www.youtube.com/watch?v=${x.video_id}&lc=${x.comment_id}`:'';
+    const txt=esc(x.text.length>120?x.text.slice(0,120)+'…':x.text);
+    return makeTopItem('l'+i,i,url?`<a href="${url}" target="_blank" class="item-link">${txt}</a>`:txt,`${x.text.length} chars`,`<div class="ti-likes" style="color:${rankColor(i)}">${x.likes.toLocaleString()}</div>`,commentDetail(x));
+  }
+  function ghostList(msg){return `<div class="empty-box">${Array(10).fill(0).map(()=>`<div class="ghost-row"><div class="ghost-rank"></div><div class="ghost-text" style="width:${40+Math.random()*40}%"></div><div class="ghost-sub"></div><div class="ghost-val"></div></div>`).join('')}<div class="empty-box-msg"><span>${msg}</span></div></div>`;}
+
+  const origOnVideo=c.filter(x=>!x.is_reply&&!x.is_short).length, origOnShort=c.filter(x=>!x.is_reply&&x.is_short).length;
+  const replyOnVideo=c.filter(x=>x.is_reply&&!x.is_short).length, replyOnShort=c.filter(x=>x.is_reply&&x.is_short).length;
+  const zeroLikes=total-withLikes, likesLow=c.filter(x=>x.likes>=1&&x.likes<=5).length;
+  const likesMid=c.filter(x=>x.likes>5&&x.likes<=50).length, likesHigh=c.filter(x=>x.likes>50&&x.likes<=500).length, likesViral=c.filter(x=>x.likes>500).length;
+
+  document.getElementById('stats-content').innerHTML=`
+    <div class="stats-hero">
+      <div class="pie-col">
+        <div class="pie-tab-row">
+          <button class="pie-tab active" data-piegroup="main" data-pietab="type" onclick="showPieTab('type')">Type</button>
+          <button class="pie-tab" data-piegroup="main" data-pietab="liked" onclick="showPieTab('liked')">Likes</button>
+        </div>
+        <div id="pie-display" style="width:100%;"></div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-right">
+        <div class="hero-progress-block">
+          <div class="hero-progress-header">
+            <span class="hero-progress-label">Total Likes</span>
+            <span class="hero-progress-val">${totalLikes.toLocaleString()}<span> / 1,000,000</span></span>
+          </div>
+          <div class="hero-progress-bar"><div class="hero-progress-fill" style="width:${Math.min(totalLikes/10000,100).toFixed(2)}%"></div></div>
+          <div class="hero-progress-sub">${(totalLikes/10000).toFixed(2)}% of 1 million</div>
+        </div>
+        <div class="stat-pills">
+          <div class="stat-pill"><div class="sp-label">Comments</div><div class="sp-val">${total.toLocaleString()}</div></div>
+          <div class="stat-pill"><div class="sp-label">Best Comment</div><div class="sp-val" style="color:var(--gold)">${maxLk.toLocaleString()}</div><div class="sp-sub">likes</div></div>
+          <div class="stat-pill"><div class="sp-label">Avg Likes</div><div class="sp-val" style="color:var(--accent2)">${avgLikes}</div></div>
+          <div class="stat-pill"><div class="sp-label">Median Likes</div><div class="sp-val" style="color:var(--accent3)">${median}</div><div class="sp-sub">among liked</div></div>
+          <div class="stat-pill"><div class="sp-label">Got Likes</div><div class="sp-val">${withLikes.toLocaleString()}</div><div class="sp-sub">${Math.round(withLikes/total*100)}% of total</div></div>
+          <div class="stat-pill"><div class="sp-label">Zero Likes</div><div class="sp-val" style="color:var(--muted2)">${(total-withLikes).toLocaleString()}</div><div class="sp-sub">${Math.round((total-withLikes)/total*100)}% of total</div></div>
+          <div class="stat-pill"><div class="sp-label">🔥 Heating Up</div><div class="sp-val" style="color:#ff7f50">${hotCount}</div><div class="sp-sub">recent high-performers</div></div>
+          <div class="stat-pill"><div class="sp-label">Old Traction</div><div class="sp-val" style="color:var(--accent3)">${traction.length}</div><div class="sp-sub">old comments gaining likes</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="stats-section">
+      <h2>Comments by Year</h2>
+      <div class="bar-chart" id="year-bars">
+        ${years.map((y,yi)=>`<div class="bar-row" data-year="${y}" onclick="showYearDetail('${y}')" title="Click for ${y} breakdown"><div class="bar-label">${y}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(byYear[y].count/maxYearCount*100)}%;background:${yearColors[yi%yearColors.length]}"></div></div><div class="bar-val">${byYear[y].count}</div></div>`).join('')}
+      </div>
+      <div id="year-detail" data-year=""></div>
+    </div>
+    <div class="stats-section">
+      <h2>Top Lists</h2>
+      <div class="stat-tabs">
+        <button class="stat-tab active" data-stgroup="toplists" data-sttab="heat" onclick="showStatTab('toplists','heat')">🔥 Heating Up</button>
+        <button class="stat-tab" data-stgroup="toplists" data-sttab="traction" onclick="showStatTab('toplists','traction')">Old Traction</button>
+        <button class="stat-tab" data-stgroup="toplists" data-sttab="vcount" onclick="showStatTab('toplists','vcount')">Most Commented Videos</button>
+        <button class="stat-tab" data-stgroup="toplists" data-sttab="vlikes" onclick="showStatTab('toplists','vlikes')">Most Liked Videos</button>
+        <button class="stat-tab" data-stgroup="toplists" data-sttab="replied" onclick="showStatTab('toplists','replied')">Most Replied To</button>
+        <button class="stat-tab" data-stgroup="toplists" data-sttab="longest" onclick="showStatTab('toplists','longest')">Longest Comments</button>
+        <span class="tab-info-icon" id="toplist-info-icon">ℹ<span class="tab-tooltip" id="toplist-info-tooltip">Recent comments (≤18 months) ranked by momentum.</span></span>
+      </div>
+      <div class="stat-panel active" data-stgroup="toplists" data-sttab="heat"><div class="top-list">${heating.length?heating.map(heatItem).join(''):ghostList('No recent comments with likes found.')}</div></div>
+      <div class="stat-panel" data-stgroup="toplists" data-sttab="traction"><div class="top-list">${traction.length?traction.map(tractionItem).join(''):ghostList('No traction data yet — refresh a second time to establish a baseline.')}</div></div>
+      <div class="stat-panel" data-stgroup="toplists" data-sttab="vcount"><div class="top-list">${topByCount.length?topByCount.map(videoItem).join(''):ghostList('No video data found.')}</div></div>
+      <div class="stat-panel" data-stgroup="toplists" data-sttab="vlikes"><div class="top-list">${topByLikes.length?topByLikes.map((d,i)=>videoItem(d,i,true,'vl')).join(''):ghostList('No video data found.')}</div></div>
+      <div class="stat-panel" data-stgroup="toplists" data-sttab="replied"><div class="top-list">${mostReplied.filter(x=>(x.reply_count||0)>0).length?mostReplied.map(repliedItem).join(''):ghostList('No reply data found.')}</div></div>
+      <div class="stat-panel" data-stgroup="toplists" data-sttab="longest"><div class="top-list">${longest.length?longest.map(longestItem).join(''):ghostList('No comments found.')}</div></div>
+    </div>`;
+
+  window.showPieTab=function(tab){
+    document.querySelectorAll('[data-piegroup="main"]').forEach(b=>b.classList.toggle('active',b.dataset.pietab===tab));
+    if(tab==='type') makeInteractivePiePanel('type',[{label:'Comments on Videos',value:origOnVideo,color:'#5b9fc4'},{label:'Replies on Videos',value:replyOnVideo,color:'#e63946'},{label:'Replies on Shorts',value:replyOnShort,color:'#c4162a'},{label:'Comments on Shorts',value:origOnShort,color:'#3a7ca5'}],total);
+    if(tab==='liked') makeInteractivePiePanel('liked',[{label:'No likes',value:zeroLikes,color:'#333'},{label:'1–5 likes',value:likesLow,color:'#457b9d'},{label:'6–50 likes',value:likesMid,color:'#2a9d8f'},{label:'51–500',value:likesHigh,color:'#f4a261'},{label:'500+ likes',value:likesViral,color:'#f4a526'}],total);
+  };
+  showPieTab('type');
+  requestAnimationFrame(()=>{
+    const realList=document.querySelector('.top-list');
+    if(realList){const h=realList.offsetHeight;document.querySelectorAll('.empty-box').forEach(el=>el.style.height=h+'px');}
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+handleOAuthReturn();
+
+// If we have a cache and just returned from OAuth, offer to use cache
+const _cached = loadCache();
+if (_cached && accessToken) {
+  // Auto-populate note — user can still re-upload CSVs
+  const note = document.createElement('p');
+  note.style.cssText = 'font-size:12px;color:var(--accent3);text-align:center;';
+  note.textContent = `✓ Found ${_cached.length.toLocaleString()} cached comments — or upload new CSVs below.`;
+  document.getElementById('drop-zone').before(note);
+  // Allow launching from cache directly
+  const btn = document.createElement('button');
+  btn.className = 'btn-primary';
+  btn.textContent = `Use cached data (${_cached.length.toLocaleString()} comments)`;
+  btn.style.marginTop = '-8px';
+  btn.onclick = () => launchApp(_cached);
+  document.getElementById('btn-load').before(btn);
+}
+</script>
+</body>
+</html>
