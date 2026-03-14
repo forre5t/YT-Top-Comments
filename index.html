@@ -465,7 +465,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.16</span>
+      <span class="header-version">v0.1.17</span>
     </div>
   </header>
 
@@ -1109,9 +1109,7 @@ function render() {
   else if (colSort.col==='rank' && colSort.dir!==0)
     filtered.sort((a,b) => colSort.dir * (a.likes-b.likes));
   else if (sort==='likes' || colSort.col==='likes') {
-    // dir:-1 = descending (most likes first), dir:1 = ascending (least likes first)
-    const d = (colSort.col==='likes' && colSort.dir===1) ? 1 : -1;
-    filtered.sort((a,b) => d*(b.likes-a.likes));
+    filtered.sort((a,b) => b.likes - a.likes);
   }
   else if (sort==='heat')     filtered.sort((a,b) => b.heat_score-a.heat_score);
   else if (sort==='date_new') filtered.sort((a,b) => b.published_at.localeCompare(a.published_at));
