@@ -462,7 +462,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.2.0</span>
+      <span class="header-version">v0.2.1</span>
     </div>
   </header>
 
@@ -1321,7 +1321,7 @@ function buildStats() {
   const topByLikes=Object.values(byVideo).sort((a,b)=>b.likes-a.likes).slice(0,10);
   const videoOrigCount={},videoReplyCount={};
   c.forEach(x=>{if(!x.video_id)return;if(x.is_reply)videoReplyCount[x.video_id]=(videoReplyCount[x.video_id]||0)+1;else videoOrigCount[x.video_id]=(videoOrigCount[x.video_id]||0)+1;});
-  const mostReplied=[...c].filter(x=>!x.is_reply).sort((a,b)=>(b.reply_count||0)-(a.reply_count||0)).slice(0,10);
+  const mostReplied=[...c].filter(x=>!x.is_reply).sort((a,b)=>((b.reply_count||0)-(a.reply_count||0))||b.likes-a.likes).slice(0,10);
   const longest=[...c].sort((a,b)=>b.text.length-a.text.length).slice(0,10);
   const heating=[...c].filter(x=>x.heat_score>0).sort((a,b)=>b.heat_score-a.heat_score).slice(0,10);
   const traction=[...c].filter(x=>x.traction_score>0).sort((a,b)=>b.traction_score-a.traction_score).slice(0,10);
@@ -1346,7 +1346,7 @@ function buildStats() {
     const url=d.short?`https://www.youtube.com/shorts/${d.id}`:`https://www.youtube.com/watch?v=${d.id}`;
     const title=esc(d.title&&d.title!==d.id?(d.title.length>55?d.title.slice(0,55)+'…':d.title):d.id);
     const oc=videoOrigCount[d.id]||0,rc=videoReplyCount[d.id]||0;
-    const sub=showBreakdown?(oc>0&&rc>0?`${oc} comment${oc!==1?'s':''},${rc} repl${rc!==1?'ies':'y'}`:oc>0?`${oc} comment${oc!==1?'s':''}`:`${rc} repl${rc!==1?'ies':'y'}`):(`${d.count} comment${d.count!==1?'s':''}`);
+    const sub=showBreakdown?(oc>0&&rc>0?`${oc} comment${oc!==1?'s':''}, ${rc} repl${rc!==1?'ies':'y'}`:oc>0?`${oc} comment${oc!==1?'s':''}`:`${rc} repl${rc!==1?'ies':'y'}`):(`${d.count} comment${d.count!==1?'s':''}`);
     return makeTopItem(pfx+i,i,`<a class="item-link" href="${url}" target="_blank">${title}</a>`,sub,`<div class="ti-likes" style="color:${rankColor(i)}">${d.likes.toLocaleString()}</div>`,videoDetail(d));
   }
   function heatItem(x,i){
@@ -1452,16 +1452,22 @@ function buildStats() {
 handleOAuthReturn();
 
 const _cached = loadCache();
+const _hasLikes = _cached && _cached.some(c => c.likes > 0);
 
 if (_cached && _cached.length > 0) {
-  // We have cached data — launch the app immediately, no sign-in needed
-  // The Refresh likes button will re-trigger OAuth if the token is missing
   launchApp(_cached);
-} else if (accessToken && _cached) {
-  // Just returned from OAuth, have token + cache — launch immediately
-  launchApp(_cached);
+  // If we just returned from OAuth (have a fresh token), auto-refresh likes
+  if (accessToken) {
+    if (sessionStorage.getItem('autoRefresh')) {
+      sessionStorage.removeItem('autoRefresh');
+      setTimeout(() => doRefresh(), 800);
+    } else if (!_hasLikes) {
+      // Cache exists but all likes are 0 — auto-refresh now that we have a token
+      setTimeout(() => doRefresh(), 800);
+    }
+  }
 } else {
-  // No cache — show landing, but if we just got a token show a helpful note
+  // No cache — show landing
   if (accessToken) {
     const note = document.createElement('p');
     note.style.cssText = 'font-size:12px;color:var(--accent3);text-align:center;';
@@ -1470,23 +1476,16 @@ if (_cached && _cached.length > 0) {
   }
 }
 
-// Refresh likes re-triggers OAuth if token is gone (e.g. page was refreshed)
+// Refresh likes button: re-triggers OAuth if token is gone
 const _origDoRefresh = doRefresh;
 window.doRefresh = async function() {
   if (!accessToken) {
-    // Save a flag so after OAuth redirect we auto-refresh
     sessionStorage.setItem('autoRefresh', '1');
     startOAuth();
     return;
   }
   await _origDoRefresh();
 };
-
-// Auto-refresh if we came back from OAuth with that flag set
-if (accessToken && sessionStorage.getItem('autoRefresh')) {
-  sessionStorage.removeItem('autoRefresh');
-  if (_cached) setTimeout(() => doRefresh(), 500);
-}
 </script>
 </body>
 </html>
