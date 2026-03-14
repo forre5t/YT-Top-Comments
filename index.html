@@ -462,7 +462,7 @@
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
       <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
-      <span class="header-version">v0.1.8</span>
+      <span class="header-version">v0.1.9</span>
     </div>
   </header>
 
@@ -1200,7 +1200,7 @@ window._hidePieTip=function(){
 function showStatTab(group, tab) {
   document.querySelectorAll(`[data-stgroup="${group}"]`).forEach(el=>el.classList.toggle('active', el.dataset.sttab===tab));
   if (group==='toplists') {
-    const tooltips={heat:'Recent comments (≤18 months) ranked by momentum. Score = likes ÷ √(days since posted).',traction:'Comments 2+ years old that gained likes since your last refresh.',vcount:'Videos you commented on the most.',vlikes:'Videos where your comments earned the most total likes.',replied:'Your top-level comments that received the most replies.',longest:'Your longest comments by character count.'};
+    const tooltips={heat:'Recent comments (≤18 months) ranked by momentum. Score = likes ÷ √(days since posted).',traction:'Comments 2+ years old that gained likes since your last refresh. Hit Refresh Likes twice to establish a baseline.',vcount:'Videos you commented on the most.',vlikes:'Videos where your comments earned the most total likes.',replied:'Your top-level comments that received the most replies.',longest:'Your longest comments by character count.'};
     const el=document.getElementById('toplist-info-tooltip');
     if(el && tooltips[tab]) el.textContent=tooltips[tab];
   }
@@ -1310,7 +1310,7 @@ function buildStats() {
   const yearColors=['#457b9d','#2a9d8f','#e9c46a','#f4a261','#e76f51','#a8b2c1','#c084fc','#6ee7b7'];
   const byVideo={};
   c.forEach(x=>{if(!x.video_id)return;if(!byVideo[x.video_id])byVideo[x.video_id]={count:0,likes:0,title:x.video_title||x.video_id,short:x.is_short,id:x.video_id};byVideo[x.video_id].count++;byVideo[x.video_id].likes+=x.likes;});
-  const topByCount=Object.values(byVideo).sort((a,b)=>b.count-a.count).slice(0,10);
+  const topByCount=Object.values(byVideo).sort((a,b)=>b.count-a.count||b.likes-a.likes).slice(0,10);
   const topByLikes=Object.values(byVideo).sort((a,b)=>b.likes-a.likes).slice(0,10);
   const videoOrigCount={},videoReplyCount={};
   c.forEach(x=>{if(!x.video_id)return;if(x.is_reply)videoReplyCount[x.video_id]=(videoReplyCount[x.video_id]||0)+1;else videoOrigCount[x.video_id]=(videoOrigCount[x.video_id]||0)+1;});
@@ -1415,7 +1415,7 @@ function buildStats() {
         <span class="tab-info-icon" id="toplist-info-icon">ℹ<span class="tab-tooltip" id="toplist-info-tooltip">Recent comments (≤18 months) ranked by momentum.</span></span>
       </div>
       <div class="stat-panel active" data-stgroup="toplists" data-sttab="heat"><div class="top-list">${heating.length?heating.map(heatItem).join(''):ghostList('No recent comments with likes found.')}</div></div>
-      <div class="stat-panel" data-stgroup="toplists" data-sttab="traction"><div class="top-list">${traction.length?traction.map(tractionItem).join(''):ghostList('No traction data yet — refresh a second time to establish a baseline.')}</div></div>
+      <div class="stat-panel" data-stgroup="toplists" data-sttab="traction"><div class="top-list">${traction.length?traction.map(tractionItem).join(''):ghostList('No traction data yet — hit ↻ Refresh Likes a second time to establish a baseline.')}</div></div>
       <div class="stat-panel" data-stgroup="toplists" data-sttab="vcount"><div class="top-list">${topByCount.length?topByCount.map(videoItem).join(''):ghostList('No video data found.')}</div></div>
       <div class="stat-panel" data-stgroup="toplists" data-sttab="vlikes"><div class="top-list">${topByLikes.length?topByLikes.map((d,i)=>videoItem(d,i,true,'vl')).join(''):ghostList('No video data found.')}</div></div>
       <div class="stat-panel" data-stgroup="toplists" data-sttab="replied"><div class="top-list">${mostReplied.filter(x=>(x.reply_count||0)>0).length?mostReplied.map(repliedItem).join(''):ghostList('No reply data found.')}</div></div>
