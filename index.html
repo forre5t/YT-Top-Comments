@@ -461,7 +461,8 @@
     </nav>
     <div class="header-right">
       <button class="btn-refresh" onclick="doRefresh()">↻ Refresh likes</button>
-      <span class="header-version">v0.1.5</span>
+      <button class="btn-refresh" onclick="logOut()" style="border-color:var(--accent);color:var(--accent);">Sign out</button>
+      <span class="header-version">v0.1.6</span>
     </div>
   </header>
 
@@ -512,7 +513,7 @@
 // ── Config ────────────────────────────────────────────────────────────────────
 // YOUR Google OAuth Web App client_id goes here:
 const CLIENT_ID = '572924482375-5sds77hlje3rndpa2941ugmnrrkus1l5.apps.googleusercontent.com';
-const SCOPES    = 'https://www.googleapis.com/auth/youtube.readonly';
+const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let accessToken  = null;
@@ -849,6 +850,12 @@ async function startLoading() {
     el.style.display = 'block';
     el.textContent = 'Error: ' + e.message;
   }
+}
+
+function logOut() {
+  accessToken = null;
+  localStorage.removeItem('ytcomments_cache');
+  window.location.href = window.location.pathname;
 }
 
 async function doRefresh() {
